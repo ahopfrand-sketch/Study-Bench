@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studybench</title>
+<style>
+  :root{
+    --paper:#EDE7DA;
+    --ink:#242019;
+    --ink-soft:#5c5548;
+    --rule:#c9c0ac;
+    --slate:#2f4858;
+    --slate-soft:#5b7688;
+    --moss:#6b7a4f;
+    --rust:#a8552e;
+    --card:#f7f4ec;
+    --shadow: 4px 4px 0 rgba(36,32,25,0.12);
+    --font-body:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+    --font-mono:'Courier New',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    min-height:100vh;
+    transition:background 0.25s ease, color 0.25s ease;
+  }
+  ::selection{background:var(--rust);color:var(--paper);}
+
+  /* ---- APP SHELL / SIDEBAR ---- */
+  .app-shell{
+    display:flex;
+    min-height:100vh;
+    align-items:stretch;
+  }
+  .sidebar{
+    width:230px;
+    flex-shrink:0;
+    background:var(--card);
+    border-right:2px solid var(--ink);
+    display:flex;
+    flex-direction:column;
+    padding:26px 18px 18px;
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+  }
+  .sidebar-brand{
+    font-family:'Iowan Old Style',Georgia,serif;
+    font-weight:700;
+    font-size:24px;
+    margin:0 0 4px;
+    letter-spacing:0.5px;
+  }
+  .sidebar-brand span{color:var(--rust);}
+  .sidebar-tagline{
+    font-family:var(--font-body);
+    font-style:italic;
+    color:var(--ink-soft);
+    font-size:12px;
+    margin-bottom:22px;
+    line-height:1.4;
+  }
+  .greeting-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px;
+    background:var(--paper);
+    border:1px solid var(--rule);
+    margin-bottom:24px;
+  }
+  .greeting-box .avatar{
+    font-size:26px;
+    line-height:1;
+    width:38px;height:38px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--card);
+    border:1px solid var(--rule);
+    flex-shrink:0;
+  }
+  .greeting-box .greeting-text{
+    font-size:12.5px;
+    line-height:1.35;
+  }
+  .greeting-box .greeting-text b{display:block;font-size:14.5px;}
+
+  nav.side-nav{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    margin-bottom:auto;
+  }
+  nav.side-nav button{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+    background:none;
+    border:none;
+    border-left:3px solid transparent;
+    text-align:left;
+    padding:12px 12px;
+    cursor:pointer;
+    color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    width:100%;
+  }
+  nav.side-nav button.active{
+    color:var(--ink);
+    border-left:3px solid var(--rust);
+    background:var(--paper);
+    font-weight:700;
+  }
+  nav.side-nav button:hover{color:var(--ink);}
+  .sidebar-footer{
+    font-family:var(--font-mono);
+    font-size:9.5px;
+    color:var(--ink-soft);
+    line-height:1.6;
+    padding-top:16px;
+    border-top:1px solid var(--rule);
+    margin-top:18px;
+  }
+
+  .sidebar-toggle{
+    display:none;
+    position:fixed;
+    top:14px;
+    left:14px;
+    z-index:30;
+    font-family:var(--font-mono);
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    padding:10px 12px;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+  }
+  .sidebar-scrim{display:none;}
+
+  main{
+    max-width:840px;
+    margin:0 auto;
+    padding:32px 24px 80px;
+    flex:1;
+    min-width:0;
+  }
+  .view{display:none;}
+  .view.active{display:block;}
+
+  @media (max-width:820px){
+    .sidebar{
+      position:fixed;
+      left:0; top:0;
+      z-index:25;
+      transform:translateX(-100%);
+      transition:transform 0.25s ease;
+      box-shadow:8px 0 24px rgba(0,0,0,0.18);
+    }
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-toggle{display:block;}
+    .sidebar-scrim{
+      display:none;
+      position:fixed;inset:0;
+      background:rgba(0,0,0,0.35);
+      z-index:20;
+    }
+    .sidebar-scrim.open{display:block;}
+    main{padding-top:70px;}
+  }
+
+  h2.section-title{
+    font-size:13px;
+    font-family:var(--font-mono);
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 20px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  h2.section-title::after{
+    content:'';
+    flex:1;
+    height:1px;
+    background:var(--rule);
+  }
+
+  /* ---- Buttons & inputs ---- */
+  button.primary{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    padding:12px 20px;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+    transition:transform 0.08s ease;
+  }
+  button.primary:hover{transform:translate(-1px,-1px);}
+  button.primary:active{transform:translate(1px,1px);box-shadow:1px 1px 0 rgba(36,32,25,0.12);}
+  button.ghost{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    background:transparent;
+    color:var(--ink);
+    border:1.5px solid var(--ink);
+    padding:10px 18px;
+    cursor:pointer;
+  }
+  button.ghost:hover{background:var(--ink);color:var(--paper);}
+  button.small{padding:6px 12px;font-size:11px;}
+  button.danger{border-color:var(--rust);color:var(--rust);}
+  button.danger:hover{background:var(--rust);color:var(--paper);}
+
+  textarea,input[type=text],input[type=number],select{
+    font-family:var(--font-body);
+    font-size:15px;
+    background:var(--card);
+    border:1px solid var(--rule);
+    color:var(--ink);
+    padding:10px 12px;
+    width:100%;
+  }
+  textarea:focus,input:focus,select:focus{outline:2px solid var(--slate);outline-offset:1px;}
+  label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--ink-soft);
+    display:block;
+    margin-bottom:6px;
+  }
+
+  /* ---- FLASHCARDS ---- */
+  .deck-bar{display:flex;gap:10px;align-items:center;margin-bottom:24px;flex-wrap:wrap;}
+  .deck-bar select{width:auto;flex:1;min-width:160px;}
+  .stat-row{display:flex;gap:18px;margin-bottom:22px;flex-wrap:wrap;}
+  .stat{
+    font-family:var(--font-mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--ink-soft);
+  }
+  .stat b{display:block;font-family:Georgia,serif;font-size:22px;color:var(--ink);font-weight:700;letter-spacing:0;}
+
+  .card-stage{
+    perspective:1400px;
+    margin:0 auto 22px;
+    max-width:600px;
+  }
+  .flashcard{
+    position:relative;
+    min-height:260px;
+    background:var(--card);
+    border:1.5px solid var(--ink);
+    box-shadow:6px 6px 0 rgba(36,32,25,0.15);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:36px;
+    text-align:center;
+    transition:transform 0.35s;
+    transform-style:preserve-3d;
+  }
+  .flashcard.flipped{transform:rotateY(180deg);}
+  .face{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:36px;
+    backface-visibility:hidden;
+    flex-direction:column;
+    gap:14px;
+  }
+  .face.back{transform:rotateY(180deg);}
+  .face .eyebrow{
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--slate-soft);
+    position:absolute;
+    top:16px;
+    left:20px;
+  }
+  .face p{font-size:20px;line-height:1.5;margin:0;}
+  .hint{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:center;
+    margin-bottom:18px;
+  }
+  .grade-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .grade-row button{
+    font-family:var(--font-mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    padding:10px 16px;
+    border:1.5px solid var(--ink);
+    background:var(--card);
+    cursor:pointer;
+  }
+  .grade-row button[data-g="0"]{border-color:var(--rust);color:var(--rust);}
+  .grade-row button[data-g="0"]:hover{background:var(--rust);color:var(--paper);}
+  .grade-row button[data-g="1"]{border-color:#b58a2e;color:#8a6a20;}
+  .grade-row button[data-g="1"]:hover{background:#b58a2e;color:var(--paper);}
+  .grade-row button[data-g="2"]{border-color:var(--moss);color:var(--moss);}
+  .grade-row button[data-g="2"]:hover{background:var(--moss);color:var(--paper);}
+
+  .empty-state{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+    font-style:italic;
+  }
+
+  .card-list{margin-top:30px;}
+  .card-row{
+    display:flex;
+    gap:14px;
+    padding:14px 0;
+    border-bottom:1px solid var(--rule);
+    align-items:flex-start;
+  }
+  .card-row .front-text{font-weight:700;flex:1;}
+  .card-row .back-text{flex:1;color:var(--ink-soft);}
+  .card-row .due{
+    font-family:var(--font-mono);
+    font-size:10px;
+    text-transform:uppercase;
+    color:var(--slate-soft);
+    white-space:nowrap;
+    padding-top:2px;
+  }
+
+  .add-card-form{
+    background:var(--card);
+    border:1px solid var(--rule);
+    padding:20px;
+    margin-bottom:10px;
+  }
+  .add-card-form .row{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;}
+  .add-card-form .row > div{flex:1;min-width:220px;}
+  .bulk-note{font-size:12px;color:var(--ink-soft);margin-top:8px;font-style:italic;}
+
+  /* ---- TIMER ---- */
+  .timer-wrap{text-align:center;padding:40px 0;}
+  .timer-display{
+    font-family:var(--font-mono);
+    font-size:96px;
+    font-weight:700;
+    letter-spacing:2px;
+    margin:10px 0 6px;
+    color:var(--ink);
+  }
+  .timer-mode{
+    font-family:var(--font-mono);
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:3px;
+    color:var(--rust);
+    margin-bottom:30px;
+  }
+  .timer-mode.break{color:var(--moss);}
+  .timer-controls{display:flex;gap:12px;justify-content:center;margin-bottom:36px;flex-wrap:wrap;}
+  .timer-ring-track{
+    width:280px;height:280px;
+    margin:0 auto 30px;
+    border-radius:50%;
+    border:10px solid var(--rule);
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+  }
+  .timer-ring-track .fill{
+    position:absolute;inset:-10px;
+    border-radius:50%;
+  }
+  .session-log{max-width:420px;margin:0 auto;text-align:left;}
+  .session-log h2.section-title{margin-top:40px;}
+  .log-row{
+    display:flex;justify-content:space-between;
+    font-family:var(--font-mono);
+    font-size:12px;
+    padding:8px 0;
+    border-bottom:1px dotted var(--rule);
+    color:var(--ink-soft);
+  }
+  .settings-row{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;}
+  .settings-row div{width:130px;}
+
+  /* ---- NOTES ---- */
+  .notes-layout{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;}
+  .notes-sidebar{width:220px;flex-shrink:0;}
+  .notes-sidebar button.note-item{
+    display:block;width:100%;text-align:left;
+    background:none;border:none;
+    font-family:Georgia,serif;font-size:14px;
+    padding:10px 10px;
+    cursor:pointer;
+    color:var(--ink-soft);
+    border-left:3px solid transparent;
+  }
+  .notes-sidebar button.note-item.active{
+    color:var(--ink);
+    border-left:3px solid var(--rust);
+    background:var(--card);
+    font-weight:700;
+  }
+  .notes-main{flex:1;min-width:280px;}
+  .notes-main textarea{min-height:340px;font-size:16px;line-height:1.6;resize:vertical;}
+  .notes-toolbar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;justify-content:space-between;}
+
+  footer{
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--ink-soft);
+    padding:30px 20px 40px;
+    border-top:1px solid var(--rule);
+    margin-top:40px;
+  }
+
+  /* ---- SETTINGS ---- */
+  .settings-block{
+    background:var(--card);
+    border:1px solid var(--rule);
+    padding:22px;
+    margin-bottom:22px;
+  }
+  .settings-block h3{
+    margin:0 0 4px;
+    font-size:16px;
+  }
+  .settings-block .sub{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+    font-style:italic;
+  }
+  .field-row{display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;}
+  .field-row > div{flex:1;min-width:180px;}
+
+  .swatch-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .swatch{
+    width:44px;height:44px;
+    border:2px solid transparent;
+    cursor:pointer;
+    position:relative;
+    flex-shrink:0;
+  }
+  .swatch.selected{border-color:var(--ink);}
+  .swatch.selected::after{
+    content:'✓';
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;
+    font-size:16px;
+    text-shadow:0 0 3px rgba(0,0,0,0.6);
+  }
+  .accent-swatch{width:32px;height:32px;border-radius:50%;}
+
+  .avatar-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .avatar-choice{
+    width:42px;height:42px;
+    font-size:20px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--paper);
+    border:1.5px solid var(--rule);
+    cursor:pointer;
+  }
+  .avatar-choice.selected{border-color:var(--rust);background:var(--card);}
+
+  .toggle-pair{display:flex;border:1.5px solid var(--ink);width:fit-content;}
+  .toggle-pair button{
+    font-family:var(--font-mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    padding:9px 16px;
+    border:none;
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .toggle-pair button.selected{background:var(--ink);color:var(--paper);}
+  .toggle-pair button + button{border-left:1.5px solid var(--ink);}
+
+  .settings-actions{display:flex;gap:10px;flex-wrap:wrap;}
+
+  /* ---- GREETING TOAST ---- */
+  .greeting-toast{
+    background:var(--card);
+    border:1.5px solid var(--ink);
+    box-shadow:var(--shadow);
+    padding:18px 22px;
+    margin-bottom:26px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .greeting-toast .avatar{font-size:30px;}
+  .greeting-toast .msg b{display:block;font-size:17px;}
+  .greeting-toast .msg span{font-size:12.5px;color:var(--ink-soft);font-style:italic;}
+  .greeting-toast .close-toast{
+    margin-left:auto;
+    background:none;border:none;
+    cursor:pointer;
+    color:var(--ink-soft);
+    font-family:var(--font-mono);
+    font-size:16px;
+  }
+
+  /* ---- PROFILE MODAL ---- */
+  .modal-scrim{
+    position:fixed;inset:0;
+    background:rgba(20,18,14,0.55);
+    display:flex;align-items:center;justify-content:center;
+    z-index:100;
+    padding:20px;
+  }
+  .modal-box{
+    background:var(--card);
+    border:1.5px solid var(--ink);
+    box-shadow:8px 8px 0 rgba(36,32,25,0.18);
+    max-width:420px;
+    width:100%;
+    padding:30px 28px;
+  }
+  .modal-box h2{margin:0 0 6px;font-size:22px;}
+  .modal-box .sub{color:var(--ink-soft);font-style:italic;font-size:13px;margin:0 0 20px;}
+  .modal-box label{margin-top:14px;}
+  .modal-box .avatar-row{margin-bottom:6px;}
+
+  @media (max-width:600px){
+    .timer-display{font-size:64px;}
+    .timer-ring-track{width:200px;height:200px;}
+    main{padding:24px 16px 60px;}
+  }
+
+  /* ---- REWARD TOAST ---- */
+  .reward-toast{
+    position:fixed;
+    bottom:24px;
+    right:24px;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--font-mono);
+    font-size:13px;
+    padding:14px 20px;
+    box-shadow:6px 6px 0 rgba(36,32,25,0.25);
+    z-index:200;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    animation:rewardPop 0.35s ease;
+    max-width:280px;
+  }
+  .reward-toast .icon{font-size:22px;}
+  @keyframes rewardPop{
+    from{transform:translateY(16px);opacity:0;}
+    to{transform:translateY(0);opacity:1;}
+  }
+  @media (max-width:600px){
+    .reward-toast{left:16px;right:16px;bottom:16px;max-width:none;}
+  }
+
+  /* ---- REWARDS VIEW ---- */
+  .points-hero{
+    display:flex;
+    align-items:center;
+    gap:24px;
+    background:var(--card);
+    border:1.5px solid var(--ink);
+    box-shadow:var(--shadow);
+    padding:26px 28px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+  }
+  .points-hero .points-num{
+    font-family:Georgia,serif;
+    font-size:46px;
+    font-weight:700;
+    line-height:1;
+  }
+  .points-hero .points-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--ink-soft);
+    margin-top:4px;
+  }
+  .points-hero .streak-block{
+    margin-left:auto;
+    text-align:right;
+  }
+  .badge-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(100px,1fr));
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .badge-tile{
+    background:var(--card);
+    border:1px solid var(--rule);
+    padding:16px 8px;
+    text-align:center;
+    font-size:11px;
+    font-family:var(--font-mono);
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .badge-tile .b-icon{font-size:28px;display:block;margin-bottom:8px;filter:grayscale(1);opacity:0.35;}
+  .badge-tile.unlocked{border-color:var(--ink);color:var(--ink);}
+  .badge-tile.unlocked .b-icon{filter:none;opacity:1;}
+  .progress-bar-track{
+    height:10px;
+    background:var(--paper);
+    border:1px solid var(--rule);
+    margin-top:8px;
+  }
+  .progress-bar-fill{
+    height:100%;
+    background:var(--moss);
+  }
+
+  /* ---- WELLBEING VIEW ---- */
+  .wellbeing-intro{
+    font-style:italic;
+    color:var(--ink-soft);
+    font-size:13px;
+    margin-bottom:22px;
+    line-height:1.5;
+  }
+  .mood-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+  .mood-btn{
+    flex:1;
+    min-width:70px;
+    background:var(--card);
+    border:1.5px solid var(--rule);
+    padding:16px 8px;
+    text-align:center;
+    cursor:pointer;
+    font-family:var(--font-mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--ink-soft);
+  }
+  .mood-btn .m-icon{font-size:26px;display:block;margin-bottom:6px;}
+  .mood-btn.selected{border-color:var(--ink);color:var(--ink);background:var(--paper);font-weight:700;}
+  .breathing-block{
+    text-align:center;
+    padding:30px 0 10px;
+  }
+  .breathing-circle{
+    width:140px;height:140px;
+    border-radius:50%;
+    border:2px solid var(--slate);
+    background:rgba(47,72,88,0.08);
+    margin:0 auto 18px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-mono);
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--slate);
+    transition:transform 4s ease-in-out;
+  }
+  .breathing-circle.grow{transform:scale(1.5);}
+  .breathing-circle.shrink{transform:scale(1);}
+  .checkin-history{margin-top:10px;}
+  .checkin-row{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    padding:12px 0;
+    border-bottom:1px solid var(--rule);
+  }
+  .checkin-row .m-icon{font-size:20px;}
+  .checkin-row .ci-body{flex:1;}
+  .checkin-row .ci-date{
+    font-family:var(--font-mono);
+    font-size:10px;
+    color:var(--slate-soft);
+    text-transform:uppercase;
+  }
+  .checkin-row .ci-note{font-size:13.5px;color:var(--ink-soft);margin-top:2px;}
+  .care-note{
+    background:var(--card);
+    border:1px solid var(--rule);
+    padding:16px 18px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    line-height:1.6;
+    margin-top:26px;
+  }
+
+  /* ---- NOTEBOOK BAR ---- */
+  .notebook-bar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+  .notebook-bar select{width:auto;flex:1;min-width:140px;}
+
+  /* ---- TIMER SOUND ROW ---- */
+  .sound-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:6px;margin-bottom:26px;align-items:flex-end;}
+  .sound-row div{width:150px;}
+
+  /* ---- COMPACT DENSITY ---- */
+  body[data-density="compact"] main{padding-top:20px;padding-bottom:50px;}
+  body[data-density="compact"] h2.section-title{margin-bottom:12px;}
+  body[data-density="compact"] .card-row{padding:8px 0;}
+  body[data-density="compact"] .add-card-form{padding:14px;}
+  body[data-density="compact"] .settings-block{padding:14px;margin-bottom:14px;}
+  body[data-density="compact"] .timer-wrap{padding:18px 0;}
+  body[data-density="compact"] .timer-ring-track{width:220px;height:220px;}
+  body[data-density="compact"] .greeting-toast{padding:12px 16px;margin-bottom:16px;}
+  body[data-density="compact"] .sidebar{padding:16px 14px 14px;}
+  body[data-density="compact"] .greeting-box{padding:8px;margin-bottom:14px;}
+</style>
+</head>
+<body>
+
+<button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
+<div class="sidebar-scrim" id="sidebarScrim"></div>
+
+<div class="app-shell">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">Study<span>bench</span></div>
+  <div class="sidebar-tagline">flashcards · focus timer · notes — all offline, all yours</div>
+
+  <div class="greeting-box">
+    <div class="avatar" id="sidebarAvatar">📚</div>
+    <div class="greeting-text" id="sidebarGreeting"><b>Hi there</b>let's study</div>
+  </div>
+
+  <nav class="side-nav">
+    <button class="tab-btn active" data-view="cards">📇 Flashcards</button>
+    <button class="tab-btn" data-view="timer">⏱ Focus Timer</button>
+    <button class="tab-btn" data-view="notes">📝 Notes</button>
+    <button class="tab-btn" data-view="wellbeing">🌿 Wellbeing</button>
+    <button class="tab-btn" data-view="rewards">🏆 Rewards</button>
+    <button class="tab-btn" data-view="settings">⚙️ Settings</button>
+  </nav>
+
+  <div class="sidebar-footer">all data lives in this browser's local storage. no accounts, no servers, no sync.</div>
+</aside>
+
+<main>
+
+  <!-- ===================== FLASHCARDS ===================== -->
+  <section id="view-cards" class="view active">
+
+    <div id="greetingToastHolder"></div>
+
+    <div class="deck-bar">
+      <select id="deckSelect"></select>
+      <button class="ghost small" id="newDeckBtn">+ New deck</button>
+      <button class="ghost small danger" id="deleteDeckBtn">Delete deck</button>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><b id="statDue">0</b>Due now</div>
+      <div class="stat"><b id="statTotal">0</b>Total cards</div>
+      <div class="stat"><b id="statLearned">0</b>Comfortable</div>
+    </div>
+
+    <h2 class="section-title">Review</h2>
+    <div id="reviewArea"></div>
+
+    <h2 class="section-title" style="margin-top:50px;">Add a card</h2>
+    <div class="add-card-form">
+      <div class="row">
+        <div>
+          <label>Front (question)</label>
+          <textarea id="cardFront" rows="2" placeholder="What is the powerhouse of the cell?"></textarea>
+        </div>
+        <div>
+          <label>Back (answer)</label>
+          <textarea id="cardBack" rows="2" placeholder="The mitochondria"></textarea>
+        </div>
+      </div>
+      <button class="primary" id="addCardBtn">Add card</button>
+      <div class="bulk-note">Tip: paste multiple lines as <code>front | back</code> (one pair per line) into the front box, leave back empty, and click Add — it'll split them automatically.</div>
+    </div>
+
+    <h2 class="section-title" style="margin-top:50px;">All cards in this deck</h2>
+    <div class="card-list" id="cardList"></div>
+
+  </section>
+
+  <!-- ===================== TIMER ===================== -->
+  <section id="view-timer" class="view">
+    <div class="timer-wrap">
+      <div class="settings-row" id="timerSettings">
+        <div>
+          <label>Focus (min)</label>
+          <input type="number" id="focusLen" value="25" min="1" max="180">
+        </div>
+        <div>
+          <label>Break (min)</label>
+          <input type="number" id="breakLen" value="5" min="1" max="60">
+        </div>
+        <div>
+          <label>Long break (min)</label>
+          <input type="number" id="longBreakLen" value="15" min="1" max="60">
+        </div>
+      </div>
+
+      <div class="timer-ring-track" id="ringTrack">
+        <div>
+          <div class="timer-mode" id="timerMode">Focus</div>
+          <div class="timer-display" id="timerDisplay">25:00</div>
+        </div>
+      </div>
+
+      <div class="timer-controls">
+        <button class="primary" id="timerStartBtn">Start</button>
+        <button class="ghost" id="timerResetBtn">Reset</button>
+        <button class="ghost" id="timerSkipBtn">Skip</button>
+      </div>
+
+      <div class="sound-row">
+        <div>
+          <label>End sound</label>
+          <select id="timerSoundSelect">
+            <option value="chime">Chime</option>
+            <option value="bell">Bell</option>
+            <option value="digital">Digital beep</option>
+            <option value="none">Silent</option>
+          </select>
+        </div>
+        <div>
+          <label>Tick sound</label>
+          <div class="toggle-pair" id="tickToggle">
+            <button data-val="on">On</button>
+            <button data-val="off">Off</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat" style="text-align:center;">Sessions completed today: <b id="sessionCount" style="display:inline;font-size:16px;">0</b></div>
+    </div>
+
+    <div class="session-log">
+      <h2 class="section-title">Today's sessions</h2>
+      <div id="sessionLogList"></div>
+    </div>
+  </section>
+
+  <!-- ===================== NOTES ===================== -->
+  <section id="view-notes" class="view">
+    <div class="notes-layout">
+      <div class="notes-sidebar">
+        <div class="notebook-bar">
+          <select id="notebookSelect"></select>
+        </div>
+        <div class="notebook-bar">
+          <button class="ghost small" id="newNotebookBtn" style="flex:1;">+ Notebook</button>
+          <button class="ghost small danger" id="deleteNotebookBtn">Delete</button>
+        </div>
+        <button class="ghost small" id="newNoteBtn" style="width:100%;margin-bottom:14px;">+ New note</button>
+        <div id="noteList"></div>
+      </div>
+      <div class="notes-main">
+        <div class="notes-toolbar">
+          <input type="text" id="noteTitle" placeholder="Untitled note" style="font-weight:700;font-size:16px;">
+          <button class="ghost small danger" id="deleteNoteBtn">Delete</button>
+        </div>
+        <textarea id="noteBody" placeholder="Start typing your notes here. Everything autosaves to this file's local storage — nothing leaves your device."></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WELLBEING ===================== -->
+  <section id="view-wellbeing" class="view">
+    <h2 class="section-title">How are you feeling?</h2>
+    <p class="wellbeing-intro">A quick, private check-in — just for you to notice how a study session is going. This is a simple reflection tool, not a clinical or diagnostic assessment.</p>
+
+    <div class="mood-row" id="moodRow"></div>
+
+    <div>
+      <label>Anything you want to jot down? (optional)</label>
+      <textarea id="checkinNote" rows="2" placeholder="e.g. feeling a bit foggy today, or — great focus this morning!"></textarea>
+    </div>
+    <div style="height:14px;"></div>
+    <button class="primary" id="saveCheckinBtn">Save check-in</button>
+
+    <h2 class="section-title" style="margin-top:46px;">Take a breather</h2>
+    <div class="breathing-block">
+      <div class="breathing-circle" id="breathingCircle">Ready</div>
+      <button class="ghost small" id="breathingBtn">Start 1-minute breathing</button>
+    </div>
+
+    <h2 class="section-title" style="margin-top:46px;">Recent check-ins</h2>
+    <div class="checkin-history" id="checkinHistory"></div>
+
+    <div class="care-note">If you're finding things heavy or overwhelming, this app can't take the place of real support — a counselor, doctor, or someone you trust can help far more than a mood log can. You deserve that support if you need it.</div>
+  </section>
+
+  <!-- ===================== REWARDS ===================== -->
+  <section id="view-rewards" class="view">
+    <div class="points-hero">
+      <div>
+        <div class="points-num" id="pointsNum">0</div>
+        <div class="points-label">Total points</div>
+      </div>
+      <div class="streak-block">
+        <div class="points-num" id="streakNum" style="font-size:32px;">0</div>
+        <div class="points-label">Day streak</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Badges</h2>
+    <div class="badge-grid" id="badgeGrid"></div>
+
+    <h2 class="section-title" style="margin-top:40px;">How you earn points</h2>
+    <div class="settings-block" style="font-size:13.5px;line-height:1.8;">
+      <div>⏱ Finish a focus session — <b>+15 pts</b></div>
+      <div>📇 Review a flashcard — <b>+2 to +5 pts</b> (more for "Easy")</div>
+      <div>🌿 Log a wellbeing check-in — <b>+5 pts</b></div>
+      <div>🔥 Study on consecutive days to build your streak</div>
+    </div>
+  </section>
+
+  <!-- ===================== SETTINGS ===================== -->
+  <section id="view-settings" class="view">
+
+    <h2 class="section-title">Profile</h2>
+    <div class="settings-block">
+      <p class="sub">This name and avatar are used for your greeting whenever you open Studybench.</p>
+      <div class="field-row">
+        <div>
+          <label>Your name</label>
+          <input type="text" id="settingsName" placeholder="e.g. Priya">
+        </div>
+      </div>
+      <label>Avatar</label>
+      <div class="avatar-row" id="avatarRow"></div>
+    </div>
+
+    <h2 class="section-title">Appearance</h2>
+    <div class="settings-block">
+      <p class="sub">Pick a color theme for the whole app.</p>
+      <label>Theme</label>
+      <div class="swatch-row" id="themeRow"></div>
+
+      <div style="height:18px;"></div>
+      <label>Accent color</label>
+      <div class="swatch-row" id="accentRow"></div>
+
+      <div class="field-row" style="margin-top:20px;">
+        <div>
+          <label>Typeface</label>
+          <div class="toggle-pair" id="fontToggle">
+            <button data-val="serif">Serif</button>
+            <button data-val="sans">Sans</button>
+          </div>
+        </div>
+        <div>
+          <label>Density</label>
+          <div class="toggle-pair" id="densityToggle">
+            <button data-val="comfortable">Comfortable</button>
+            <button data-val="compact">Compact</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Your data</h2>
+    <div class="settings-block">
+      <p class="sub">Everything is stored only in this browser. Export a backup, restore from one, or start fresh.</p>
+      <div class="settings-actions">
+        <button class="ghost small" id="exportDataBtn">Export backup (.json)</button>
+        <button class="ghost small" id="importDataBtn">Import backup</button>
+        <input type="file" id="importDataInput" accept="application/json" style="display:none;">
+        <button class="ghost small danger" id="resetDataBtn">Reset everything</button>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+</div><!-- /app-shell -->
+
+<div class="modal-scrim" id="profileModal" style="display:none;">
+  <div class="modal-box">
+    <h2>Welcome to Studybench</h2>
+    <p class="sub">Tell us what to call you — we'll greet you here every time you open the app.</p>
+    <label>Your name</label>
+    <input type="text" id="modalName" placeholder="e.g. Priya">
+    <label>Pick an avatar</label>
+    <div class="avatar-row" id="modalAvatarRow"></div>
+    <div style="height:20px;"></div>
+    <button class="primary" id="modalSaveBtn" style="width:100%;">Let's go</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     STORAGE
+  ============================================================ */
+  const STORE_KEY = "studybench_data_v1";
+  function defaultData(){
+    return {
+      decks: {
+        "General": []
+      },
+      currentDeck: "General",
+      notebooks: ["General"],
+      currentNotebook: "General",
+      notes: [],
+      currentNoteId: null,
+      timerSettings: {focus:25, brk:5, longBrk:15},
+      sessionsToday: [],
+      sessionsDate: new Date().toDateString(),
+      profile: {name:"", avatar:"📚"},
+      settings: {theme:"paper", accent:"rust", font:"serif", density:"comfortable", timerSound:"chime", tickSound:"off"},
+      rewards: {points:0, streak:0, lastStudyDate:null, badgesUnlocked:[]},
+      wellbeing: {checkins:[]}
+    };
+  }
+  function loadData(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        const d = defaultData();
+        // backfill any top-level keys missing from older saves
+        Object.keys(d).forEach(k=>{
+          if(parsed[k] === undefined) parsed[k] = d[k];
+        });
+        if(!parsed.profile) parsed.profile = d.profile;
+        if(!parsed.settings) parsed.settings = d.settings;
+        // deep-backfill nested keys added in later versions
+        Object.keys(d.settings).forEach(k=>{
+          if(parsed.settings[k] === undefined) parsed.settings[k] = d.settings[k];
+        });
+        if(!parsed.rewards) parsed.rewards = d.rewards;
+        Object.keys(d.rewards).forEach(k=>{
+          if(parsed.rewards[k] === undefined) parsed.rewards[k] = d.rewards[k];
+        });
+        if(!parsed.wellbeing) parsed.wellbeing = d.wellbeing;
+        if(!parsed.notebooks) parsed.notebooks = d.notebooks;
+        if(!parsed.currentNotebook) parsed.currentNotebook = d.currentNotebook;
+        // give any pre-existing notes a notebook so they still show up
+        (parsed.notes||[]).forEach(n=>{ if(!n.notebook) n.notebook = "General"; });
+        return parsed;
+      }
+    }catch(e){}
+    return defaultData();
+  }
+  let DATA = loadData();
+  function save(){
+    localStorage.setItem(STORE_KEY, JSON.stringify(DATA));
+  }
+
+  /* ============================================================
+     REWARDS ENGINE
+  ============================================================ */
+  const BADGES = [
+    {id:"first_card",   icon:"🌱", label:"First Card",    test:()=> Object.values(DATA.decks).some(d=>d.length>0)},
+    {id:"first_session", icon:"⏱", label:"First Focus",   test:()=> DATA.rewards.points >= 15 && (DATA.sessionsToday.length>0 || DATA._everFocused)},
+    {id:"streak_3",      icon:"🔥", label:"3-Day Streak",  test:()=> DATA.rewards.streak >= 3},
+    {id:"streak_7",      icon:"🔥", label:"7-Day Streak",  test:()=> DATA.rewards.streak >= 7},
+    {id:"points_100",    icon:"⭐", label:"100 Points",    test:()=> DATA.rewards.points >= 100},
+    {id:"points_500",    icon:"🏅", label:"500 Points",    test:()=> DATA.rewards.points >= 500},
+    {id:"points_1500",   icon:"👑", label:"1500 Points",   test:()=> DATA.rewards.points >= 1500},
+    {id:"checkin_5",     icon:"🌿", label:"5 Check-ins",   test:()=> DATA.wellbeing.checkins.length >= 5},
+    {id:"card_master",   icon:"🧠", label:"50 Reviews",    test:()=> Object.values(DATA.decks).reduce((s,d)=>s+d.reduce((s2,c)=>s2+(c.reps||0),0),0) >= 50}
+  ];
+
+  function showRewardToast(text, icon){
+    const el = document.createElement("div");
+    el.className = "reward-toast";
+    el.innerHTML = '<span class="icon">'+(icon||"✨")+'</span><span>'+escapeHtml(text)+'</span>';
+    document.body.appendChild(el);
+    setTimeout(()=>{ el.remove(); }, 3200);
+  }
+
+  function touchStreak(){
+    const today = new Date().toDateString();
+    if(DATA.rewards.lastStudyDate === today) return; // already counted today
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    if(DATA.rewards.lastStudyDate === yesterday){
+      DATA.rewards.streak += 1;
+    } else {
+      DATA.rewards.streak = 1;
+    }
+    DATA.rewards.lastStudyDate = today;
+  }
+
+  function checkBadges(){
+    const newly = [];
+    BADGES.forEach(b=>{
+      if(!DATA.rewards.badgesUnlocked.includes(b.id) && b.test()){
+        DATA.rewards.badgesUnlocked.push(b.id);
+        newly.push(b);
+      }
+    });
+    return newly;
+  }
+
+  function awardPoints(amount, reason){
+    DATA.rewards.points += amount;
+    touchStreak();
+    const newBadges = checkBadges();
+    save();
+    showRewardToast("+"+amount+" pts — "+reason, "✨");
+    newBadges.forEach((b,i)=>{
+      setTimeout(()=> showRewardToast("Badge unlocked: "+b.label, b.icon), 900*(i+1));
+    });
+    if(document.getElementById("view-rewards").classList.contains("active")) renderRewardsView();
+  }
+
+  /* ============================================================
+     NAV
+  ============================================================ */
+  const tabBtns = document.querySelectorAll(".tab-btn");
+  const views = document.querySelectorAll(".view");
+  const sidebarEl = document.getElementById("sidebar");
+  const sidebarScrim = document.getElementById("sidebarScrim");
+
+  function closeSidebar(){
+    sidebarEl.classList.remove("open");
+    sidebarScrim.classList.remove("open");
+  }
+  document.getElementById("sidebarToggle").addEventListener("click", ()=>{
+    sidebarEl.classList.toggle("open");
+    sidebarScrim.classList.toggle("open");
+  });
+  sidebarScrim.addEventListener("click", closeSidebar);
+
+  tabBtns.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      tabBtns.forEach(b=>b.classList.remove("active"));
+      views.forEach(v=>v.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("view-"+btn.dataset.view).classList.add("active");
+      closeSidebar();
+      if(btn.dataset.view === "settings") renderSettingsView();
+      if(btn.dataset.view === "wellbeing") renderWellbeingView();
+      if(btn.dataset.view === "rewards") renderRewardsView();
+    });
+  });
+
+  /* ============================================================
+     FLASHCARDS — SM-2-lite spaced repetition
+     grade 0 = again (reset), 1 = hard (short interval), 2 = easy (grow interval)
+  ============================================================ */
+  const deckSelect = document.getElementById("deckSelect");
+  const statDue = document.getElementById("statDue");
+  const statTotal = document.getElementById("statTotal");
+  const statLearned = document.getElementById("statLearned");
+  const reviewArea = document.getElementById("reviewArea");
+  const cardList = document.getElementById("cardList");
+
+  function currentDeckCards(){
+    return DATA.decks[DATA.currentDeck] || [];
+  }
+
+  function refreshDeckSelect(){
+    deckSelect.innerHTML = "";
+    Object.keys(DATA.decks).forEach(name=>{
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name + " (" + DATA.decks[name].length + ")";
+      if(name === DATA.currentDeck) opt.selected = true;
+      deckSelect.appendChild(opt);
+    });
+  }
+
+  deckSelect.addEventListener("change", ()=>{
+    DATA.currentDeck = deckSelect.value;
+    save();
+    renderCardsView();
+  });
+
+  document.getElementById("newDeckBtn").addEventListener("click", ()=>{
+    const name = prompt("Name your new deck:");
+    if(!name) return;
+    const trimmed = name.trim();
+    if(!trimmed) return;
+    if(!DATA.decks[trimmed]) DATA.decks[trimmed] = [];
+    DATA.currentDeck = trimmed;
+    save();
+    renderCardsView();
+  });
+
+  document.getElementById("deleteDeckBtn").addEventListener("click", ()=>{
+    const names = Object.keys(DATA.decks);
+    if(names.length <= 1){ alert("You need at least one deck."); return; }
+    if(!confirm('Delete deck "'+DATA.currentDeck+'" and all its cards? This cannot be undone.')) return;
+    delete DATA.decks[DATA.currentDeck];
+    DATA.currentDeck = Object.keys(DATA.decks)[0];
+    save();
+    renderCardsView();
+  });
+
+  function isDue(card){
+    return !card.due || card.due <= Date.now();
+  }
+
+  function scheduleCard(card, grade){
+    // grade: 0 again, 1 hard, 2 easy
+    const now = Date.now();
+    const DAY = 24*60*60*1000;
+    if(grade === 0){
+      card.interval = 0;
+      card.reps = 0;
+      card.due = now + 60*1000*5; // 5 min
+    } else if(grade === 1){
+      card.reps = (card.reps||0) + 1;
+      card.interval = Math.max(1, Math.round((card.interval||1) * 1.3));
+      card.due = now + card.interval*DAY;
+    } else {
+      card.reps = (card.reps||0) + 1;
+      card.interval = card.interval ? Math.round(card.interval * 2.4) : 2;
+      card.due = now + card.interval*DAY;
+    }
+    card.lastGrade = grade;
+  }
+
+  let activeCard = null;
+  let flipped = false;
+
+  function renderReview(){
+    const cards = currentDeckCards();
+    const due = cards.filter(isDue);
+    statDue.textContent = due.length;
+    statTotal.textContent = cards.length;
+    statLearned.textContent = cards.filter(c=>(c.interval||0) >= 7).length;
+
+    if(due.length === 0){
+      reviewArea.innerHTML = '<div class="empty-state">'+
+        (cards.length === 0 ? "No cards yet — add your first one below." : "Nothing due right now. Nice work — come back later.")+
+        '</div>';
+      activeCard = null;
+      return;
+    }
+
+    if(!activeCard || !due.includes(activeCard)){
+      activeCard = due[0];
+      flipped = false;
+    }
+
+    reviewArea.innerHTML =
+      '<div class="hint">Click the card to flip it, then grade how well you knew it.</div>'+
+      '<div class="card-stage">'+
+        '<div class="flashcard" id="flashcardEl">'+
+          '<div class="face front"><div class="eyebrow">Question</div><p></p></div>'+
+          '<div class="face back"><div class="eyebrow">Answer</div><p></p></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="grade-row" id="gradeRow" style="display:none;">'+
+        '<button data-g="0">Again</button>'+
+        '<button data-g="1">Hard</button>'+
+        '<button data-g="2">Easy</button>'+
+      '</div>';
+
+    const el = document.getElementById("flashcardEl");
+    el.querySelector(".face.front p").textContent = activeCard.front;
+    el.querySelector(".face.back p").textContent = activeCard.back;
+    if(flipped) el.classList.add("flipped");
+
+    el.addEventListener("click", ()=>{
+      flipped = !flipped;
+      el.classList.toggle("flipped");
+      document.getElementById("gradeRow").style.display = flipped ? "flex" : "none";
+    });
+
+    document.getElementById("gradeRow").querySelectorAll("button").forEach(b=>{
+      b.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const grade = parseInt(b.dataset.g,10);
+        scheduleCard(activeCard, grade);
+        save();
+        const pts = grade === 0 ? 2 : (grade === 1 ? 3 : 5);
+        awardPoints(pts, grade===0?"kept at it":(grade===1?"solid review":"nailed it"));
+        activeCard = null;
+        flipped = false;
+        renderReview();
+        refreshDeckSelect();
+      });
+    });
+  }
+
+  function fmtDue(card){
+    if(!card.due) return "new";
+    const diff = card.due - Date.now();
+    if(diff <= 0) return "due now";
+    const mins = Math.round(diff/60000);
+    if(mins < 60) return "in " + mins + "m";
+    const hrs = Math.round(mins/60);
+    if(hrs < 24) return "in " + hrs + "h";
+    return "in " + Math.round(hrs/24) + "d";
+  }
+
+  function renderCardListing(){
+    const cards = currentDeckCards();
+    if(cards.length === 0){
+      cardList.innerHTML = '<div class="empty-state">This deck is empty.</div>';
+      return;
+    }
+    cardList.innerHTML = "";
+    cards.forEach((c, idx)=>{
+      const row = document.createElement("div");
+      row.className = "card-row";
+      row.innerHTML =
+        '<div class="front-text"></div>'+
+        '<div class="back-text"></div>'+
+        '<div class="due"></div>'+
+        '<button class="ghost small danger" style="padding:4px 10px;">×</button>';
+      row.querySelector(".front-text").textContent = c.front;
+      row.querySelector(".back-text").textContent = c.back;
+      row.querySelector(".due").textContent = fmtDue(c);
+      row.querySelector("button").addEventListener("click", ()=>{
+        if(!confirm("Delete this card?")) return;
+        cards.splice(idx,1);
+        save();
+        renderCardsView();
+      });
+      cardList.appendChild(row);
+    });
+  }
+
+  document.getElementById("addCardBtn").addEventListener("click", ()=>{
+    const frontEl = document.getElementById("cardFront");
+    const backEl = document.getElementById("cardBack");
+    const front = frontEl.value.trim();
+    const back = backEl.value.trim();
+    const cards = currentDeckCards();
+
+    if(!back && front.includes("|") && front.includes("\n")){
+      // bulk mode
+      const lines = front.split("\n").map(l=>l.trim()).filter(Boolean);
+      let added = 0;
+      lines.forEach(line=>{
+        const parts = line.split("|");
+        if(parts.length >= 2){
+          cards.push({front: parts[0].trim(), back: parts.slice(1).join("|").trim(), due:0, interval:0, reps:0});
+          added++;
+        }
+      });
+      if(added === 0){ alert("Couldn't find any front | back pairs."); return; }
+      save();
+      frontEl.value = ""; backEl.value = "";
+      renderCardsView();
+      return;
+    }
+
+    if(!front || !back){ alert("Please fill in both the front and back."); return; }
+    cards.push({front, back, due:0, interval:0, reps:0});
+    save();
+    frontEl.value = ""; backEl.value = "";
+    renderCardsView();
+  });
+
+  function renderCardsView(){
+    refreshDeckSelect();
+    renderReview();
+    renderCardListing();
+  }
+
+  /* ============================================================
+     TIMER
+  ============================================================ */
+  const focusLenEl = document.getElementById("focusLen");
+  const breakLenEl = document.getElementById("breakLen");
+  const longBreakLenEl = document.getElementById("longBreakLen");
+  const timerDisplay = document.getElementById("timerDisplay");
+  const timerMode = document.getElementById("timerMode");
+  const startBtn = document.getElementById("timerStartBtn");
+  const resetBtn = document.getElementById("timerResetBtn");
+  const skipBtn = document.getElementById("timerSkipBtn");
+  const sessionCountEl = document.getElementById("sessionCount");
+  const sessionLogList = document.getElementById("sessionLogList");
+
+  focusLenEl.value = DATA.timerSettings.focus;
+  breakLenEl.value = DATA.timerSettings.brk;
+  longBreakLenEl.value = DATA.timerSettings.longBrk;
+
+  const timerSoundSelect = document.getElementById("timerSoundSelect");
+  const tickToggle = document.getElementById("tickToggle");
+  timerSoundSelect.value = DATA.settings.timerSound || "chime";
+  tickToggle.querySelectorAll("button").forEach(b=>{
+    b.classList.toggle("selected", b.dataset.val === (DATA.settings.tickSound||"off"));
+  });
+  timerSoundSelect.addEventListener("change", ()=>{
+    DATA.settings.timerSound = timerSoundSelect.value;
+    save();
+    if(DATA.settings.timerSound !== "none") playChime();
+  });
+  tickToggle.addEventListener("click", (e)=>{
+    const btn = e.target.closest("button");
+    if(!btn) return;
+    DATA.settings.tickSound = btn.dataset.val;
+    save();
+    tickToggle.querySelectorAll("button").forEach(b=>b.classList.toggle("selected", b===btn));
+  });
+
+  let mode = "focus"; // focus | break | longbreak
+  let secondsLeft = DATA.timerSettings.focus*60;
+  let running = false;
+  let intervalId = null;
+  let focusCountSinceLong = 0;
+
+  function checkNewDay(){
+    const today = new Date().toDateString();
+    if(DATA.sessionsDate !== today){
+      DATA.sessionsDate = today;
+      DATA.sessionsToday = [];
+      save();
+    }
+  }
+  checkNewDay();
+
+  function updateDisplay(){
+    const m = Math.floor(secondsLeft/60).toString().padStart(2,"0");
+    const s = (secondsLeft%60).toString().padStart(2,"0");
+    timerDisplay.textContent = m+":"+s;
+    if(mode === "focus"){
+      timerMode.textContent = "Focus";
+      timerMode.classList.remove("break");
+    } else {
+      timerMode.textContent = mode === "break" ? "Short Break" : "Long Break";
+      timerMode.classList.add("break");
+    }
+  }
+
+  function renderSessionLog(){
+    checkNewDay();
+    sessionCountEl.textContent = DATA.sessionsToday.filter(s=>s.type==="focus").length;
+    if(DATA.sessionsToday.length === 0){
+      sessionLogList.innerHTML = '<div class="empty-state">No sessions logged yet today.</div>';
+      return;
+    }
+    sessionLogList.innerHTML = "";
+    DATA.sessionsToday.slice().reverse().forEach(s=>{
+      const row = document.createElement("div");
+      row.className = "log-row";
+      const label = s.type === "focus" ? "Focus block" : (s.type === "break" ? "Short break" : "Long break");
+      row.innerHTML = "<span>"+label+"</span><span>"+s.time+" · "+s.minutes+"m</span>";
+      sessionLogList.appendChild(row);
+    });
+  }
+  renderSessionLog();
+
+  function logSession(type, minutes){
+    checkNewDay();
+    DATA.sessionsToday.push({
+      type, minutes,
+      time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    });
+    if(type === "focus"){
+      DATA._everFocused = true;
+      awardPoints(15, "focus session complete");
+    }
+    save();
+    renderSessionLog();
+  }
+
+  let audioCtx = null;
+  function getAudioCtx(){
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playTone(ctx, freq, startAt, dur, type, peakGain){
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type || "sine";
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, ctx.currentTime+startAt);
+    g.gain.exponentialRampToValueAtTime(peakGain||0.15, ctx.currentTime+startAt+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+startAt+dur);
+    o.start(ctx.currentTime+startAt);
+    o.stop(ctx.currentTime+startAt+dur+0.05);
+  }
+
+  function playChime(){
+    const soundChoice = DATA.settings.timerSound || "chime";
+    if(soundChoice === "none") return;
+    try{
+      const ctx = getAudioCtx();
+      if(soundChoice === "chime"){
+        playTone(ctx, 523.25, 0,   1.1, "sine", 0.14);
+        playTone(ctx, 659.25, 0.14,1.1, "sine", 0.12);
+        playTone(ctx, 783.99, 0.28,1.3, "sine", 0.12);
+      } else if(soundChoice === "bell"){
+        playTone(ctx, 880, 0,    1.6, "triangle", 0.16);
+        playTone(ctx, 1760,0,    1.2, "sine", 0.05);
+      } else if(soundChoice === "digital"){
+        playTone(ctx, 880, 0,    0.15, "square", 0.1);
+        playTone(ctx, 880, 0.22, 0.15, "square", 0.1);
+        playTone(ctx, 880, 0.44, 0.25, "square", 0.1);
+      }
+    }catch(e){}
+  }
+
+  function playTick(){
+    if(DATA.settings.tickSound !== "on") return;
+    try{
+      const ctx = getAudioCtx();
+      playTone(ctx, 1000, 0, 0.04, "square", 0.03);
+    }catch(e){}
+  }
+
+  function switchMode(finishedType, finishedMinutes){
+    if(finishedType) logSession(finishedType, finishedMinutes);
+    if(mode === "focus"){
+      focusCountSinceLong++;
+      if(focusCountSinceLong >= 4){
+        mode = "longbreak";
+        focusCountSinceLong = 0;
+        secondsLeft = parseInt(longBreakLenEl.value||15,10)*60;
+      } else {
+        mode = "break";
+        secondsLeft = parseInt(breakLenEl.value||5,10)*60;
+      }
+    } else {
+      mode = "focus";
+      secondsLeft = parseInt(focusLenEl.value||25,10)*60;
+    }
+    updateDisplay();
+  }
+
+  function tick(){
+    secondsLeft--;
+    if(secondsLeft >= 0) playTick();
+    if(secondsLeft < 0){
+      playChime();
+      const finishedMinutes = mode === "focus" ? parseInt(focusLenEl.value||25,10)
+        : mode === "break" ? parseInt(breakLenEl.value||5,10)
+        : parseInt(longBreakLenEl.value||15,10);
+      switchMode(mode, finishedMinutes);
+      return;
+    }
+    updateDisplay();
+  }
+
+  startBtn.addEventListener("click", ()=>{
+    if(running){
+      running = false;
+      clearInterval(intervalId);
+      startBtn.textContent = "Resume";
+    } else {
+      running = true;
+      startBtn.textContent = "Pause";
+      intervalId = setInterval(tick, 1000);
+    }
+  });
+
+  resetBtn.addEventListener("click", ()=>{
+    running = false;
+    clearInterval(intervalId);
+    startBtn.textContent = "Start";
+    mode = "focus";
+    focusCountSinceLong = 0;
+    secondsLeft = parseInt(focusLenEl.value||25,10)*60;
+    updateDisplay();
+  });
+
+  skipBtn.addEventListener("click", ()=>{
+    switchMode(null, 0);
+  });
+
+  [focusLenEl, breakLenEl, longBreakLenEl].forEach(el=>{
+    el.addEventListener("change", ()=>{
+      DATA.timerSettings = {
+        focus: parseInt(focusLenEl.value||25,10),
+        brk: parseInt(breakLenEl.value||5,10),
+        longBrk: parseInt(longBreakLenEl.value||15,10)
+      };
+      save();
+      if(!running && mode === "focus"){
+        secondsLeft = DATA.timerSettings.focus*60;
+        updateDisplay();
+      }
+    });
+  });
+
+  updateDisplay();
+
+  /* ============================================================
+     NOTES
+  ============================================================ */
+  const noteList = document.getElementById("noteList");
+  const noteTitle = document.getElementById("noteTitle");
+  const noteBody = document.getElementById("noteBody");
+  const notebookSelect = document.getElementById("notebookSelect");
+
+  function notesInCurrentNotebook(){
+    return DATA.notes.filter(n=> (n.notebook||"General") === DATA.currentNotebook);
+  }
+
+  function refreshNotebookSelect(){
+    notebookSelect.innerHTML = "";
+    DATA.notebooks.forEach(nb=>{
+      const opt = document.createElement("option");
+      opt.value = nb;
+      const count = DATA.notes.filter(n=>(n.notebook||"General")===nb).length;
+      opt.textContent = nb + " (" + count + ")";
+      if(nb === DATA.currentNotebook) opt.selected = true;
+      notebookSelect.appendChild(opt);
+    });
+  }
+
+  notebookSelect.addEventListener("change", ()=>{
+    DATA.currentNotebook = notebookSelect.value;
+    DATA.currentNoteId = null;
+    save();
+    renderNotesView();
+  });
+
+  document.getElementById("newNotebookBtn").addEventListener("click", ()=>{
+    const name = prompt("Name your new notebook:");
+    if(!name) return;
+    const trimmed = name.trim();
+    if(!trimmed) return;
+    if(!DATA.notebooks.includes(trimmed)) DATA.notebooks.push(trimmed);
+    DATA.currentNotebook = trimmed;
+    DATA.currentNoteId = null;
+    save();
+    renderNotesView();
+  });
+
+  document.getElementById("deleteNotebookBtn").addEventListener("click", ()=>{
+    if(DATA.notebooks.length <= 1){ alert("You need at least one notebook."); return; }
+    if(!confirm('Delete notebook "'+DATA.currentNotebook+'" and all notes inside it? This cannot be undone.')) return;
+    DATA.notes = DATA.notes.filter(n=>(n.notebook||"General") !== DATA.currentNotebook);
+    DATA.notebooks = DATA.notebooks.filter(nb=>nb !== DATA.currentNotebook);
+    DATA.currentNotebook = DATA.notebooks[0];
+    DATA.currentNoteId = null;
+    save();
+    renderNotesView();
+  });
+
+  function newNote(){
+    const note = {id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), title:"Untitled note", body:"", notebook: DATA.currentNotebook, updated: Date.now()};
+    DATA.notes.unshift(note);
+    DATA.currentNoteId = note.id;
+    save();
+    renderNotesView();
+  }
+
+  document.getElementById("newNoteBtn").addEventListener("click", newNote);
+
+  document.getElementById("deleteNoteBtn").addEventListener("click", ()=>{
+    if(!DATA.currentNoteId) return;
+    if(!confirm("Delete this note?")) return;
+    DATA.notes = DATA.notes.filter(n=>n.id !== DATA.currentNoteId);
+    DATA.currentNoteId = DATA.notes.length ? DATA.notes[0].id : null;
+    save();
+    renderNotesView();
+  });
+
+  function currentNote(){
+    return DATA.notes.find(n=>n.id === DATA.currentNoteId);
+  }
+
+  let saveTimeout = null;
+  function scheduleSaveNote(){
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(()=>{
+      const n = currentNote();
+      if(!n) return;
+      n.title = noteTitle.value.trim() || "Untitled note";
+      n.body = noteBody.value;
+      n.updated = Date.now();
+      save();
+      renderNoteList();
+    }, 300);
+  }
+  noteTitle.addEventListener("input", scheduleSaveNote);
+  noteBody.addEventListener("input", scheduleSaveNote);
+
+  function renderNoteList(){
+    noteList.innerHTML = "";
+    const inNotebook = notesInCurrentNotebook();
+    if(inNotebook.length === 0){
+      noteList.innerHTML = '<div class="empty-state" style="padding:24px 4px;">No notes in this notebook yet.</div>';
+      return;
+    }
+    inNotebook.slice().sort((a,b)=>b.updated-a.updated).forEach(n=>{
+      const btn = document.createElement("button");
+      btn.className = "note-item" + (n.id === DATA.currentNoteId ? " active" : "");
+      btn.textContent = n.title || "Untitled note";
+      btn.addEventListener("click", ()=>{
+        DATA.currentNoteId = n.id;
+        save();
+        renderNotesView();
+      });
+      noteList.appendChild(btn);
+    });
+  }
+
+  function renderNotesView(){
+    refreshNotebookSelect();
+    if(DATA.notes.length === 0){
+      const n = {id: Date.now().toString(36), title:"Welcome", body:"This is your notes space. Everything you type here is saved automatically to this browser, on this device.\n\nUse the notebook picker above to organize notes by subject, and the sidebar list to create more.", notebook: DATA.currentNotebook, updated: Date.now()};
+      DATA.notes.push(n);
+      DATA.currentNoteId = n.id;
+      save();
+    }
+    let inNotebook = notesInCurrentNotebook();
+    if(inNotebook.length === 0){
+      // no notes in this notebook — clear the editor rather than showing another notebook's note
+      DATA.currentNoteId = null;
+      save();
+      noteTitle.value = "";
+      noteBody.value = "";
+      renderNoteList();
+      return;
+    }
+    if(!DATA.currentNoteId || !currentNote() || (currentNote().notebook||"General") !== DATA.currentNotebook){
+      DATA.currentNoteId = inNotebook[0].id;
+      save();
+    }
+    const n = currentNote();
+    noteTitle.value = n.title;
+    noteBody.value = n.body;
+    renderNoteList();
+  }
+
+  /* ============================================================
+     WELLBEING — simple self check-in, not a diagnostic tool
+  ============================================================ */
+  const MOODS = [
+    {id:"low",    icon:"🌧️", label:"Low"},
+    {id:"tired",  icon:"😮‍💨", label:"Tired"},
+    {id:"okay",   icon:"😐", label:"Okay"},
+    {id:"good",   icon:"🙂", label:"Good"},
+    {id:"great",  icon:"✨", label:"Great"}
+  ];
+  let selectedMood = null;
+
+  function renderMoodRow(){
+    const row = document.getElementById("moodRow");
+    row.innerHTML = "";
+    MOODS.forEach(m=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "mood-btn" + (selectedMood===m.id ? " selected" : "");
+      btn.innerHTML = '<span class="m-icon">'+m.icon+'</span>'+m.label;
+      btn.addEventListener("click", ()=>{
+        selectedMood = m.id;
+        renderMoodRow();
+      });
+      row.appendChild(btn);
+    });
+  }
+
+  function moodMeta(id){ return MOODS.find(m=>m.id===id) || MOODS[2]; }
+
+  document.getElementById("saveCheckinBtn").addEventListener("click", ()=>{
+    if(!selectedMood){ alert("Pick how you're feeling first."); return; }
+    const note = document.getElementById("checkinNote").value.trim();
+    DATA.wellbeing.checkins.push({
+      mood: selectedMood,
+      note,
+      date: Date.now()
+    });
+    save();
+    document.getElementById("checkinNote").value = "";
+    selectedMood = null;
+    renderMoodRow();
+    renderCheckinHistory();
+    awardPoints(5, "wellbeing check-in");
+  });
+
+  function renderCheckinHistory(){
+    const holder = document.getElementById("checkinHistory");
+    const list = DATA.wellbeing.checkins.slice().sort((a,b)=>b.date-a.date).slice(0,12);
+    if(list.length === 0){
+      holder.innerHTML = '<div class="empty-state">No check-ins yet.</div>';
+      return;
+    }
+    holder.innerHTML = "";
+    list.forEach(c=>{
+      const m = moodMeta(c.mood);
+      const row = document.createElement("div");
+      row.className = "checkin-row";
+      row.innerHTML =
+        '<span class="m-icon">'+m.icon+'</span>'+
+        '<div class="ci-body">'+
+          '<div class="ci-date">'+new Date(c.date).toLocaleString([], {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"})+' · '+m.label+'</div>'+
+          (c.note ? '<div class="ci-note"></div>' : '')+
+        '</div>';
+      if(c.note) row.querySelector(".ci-note").textContent = c.note;
+      holder.appendChild(row);
+    });
+  }
+
+  let breathingRunning = false;
+  let breathingTimeouts = [];
+  document.getElementById("breathingBtn").addEventListener("click", ()=>{
+    if(breathingRunning) return;
+    breathingRunning = true;
+    const circle = document.getElementById("breathingCircle");
+    const btn = document.getElementById("breathingBtn");
+    btn.disabled = true;
+    let cycles = 0;
+    const totalCycles = 4; // roughly 1 minute of box breathing (4-4-4-4)
+
+    function runCycle(){
+      if(cycles >= totalCycles){
+        circle.textContent = "Nice work";
+        circle.className = "breathing-circle";
+        setTimeout(()=>{
+          circle.textContent = "Ready";
+          breathingRunning = false;
+          btn.disabled = false;
+        }, 1500);
+        return;
+      }
+      circle.textContent = "Breathe in";
+      circle.className = "breathing-circle grow";
+      breathingTimeouts.push(setTimeout(()=>{
+        circle.textContent = "Hold";
+        breathingTimeouts.push(setTimeout(()=>{
+          circle.textContent = "Breathe out";
+          circle.className = "breathing-circle shrink";
+          breathingTimeouts.push(setTimeout(()=>{
+            circle.textContent = "Hold";
+            breathingTimeouts.push(setTimeout(()=>{
+              cycles++;
+              runCycle();
+            }, 4000));
+          }, 4000));
+        }, 4000));
+      }, 4000));
+    }
+    runCycle();
+  });
+
+  function renderWellbeingView(){
+    renderMoodRow();
+    renderCheckinHistory();
+  }
+
+  /* ============================================================
+     THEME / CUSTOMIZATION
+  ============================================================ */
+  const THEMES = {
+    paper:  {paper:"#EDE7DA", ink:"#242019", inkSoft:"#5c5548", rule:"#c9c0ac", card:"#f7f4ec", label:"Paper"},
+    dark:   {paper:"#1d1b17", ink:"#ece6d8", inkSoft:"#a89f8c", rule:"#3c372c", card:"#26231d", label:"Dark"},
+    ocean:  {paper:"#e6eef2", ink:"#1c333e", inkSoft:"#4f6b78", rule:"#b9d2da", card:"#f3f9fb", label:"Ocean"},
+    forest: {paper:"#eaf0e2", ink:"#243019", inkSoft:"#5a6a44", rule:"#c1d1a9", card:"#f6faf0", label:"Forest"},
+    blush:  {paper:"#f6e9e6", ink:"#3a2420", inkSoft:"#8a6a62", rule:"#e2c6c0", card:"#fdf6f4", label:"Blush"}
+  };
+  const ACCENTS = {
+    rust:  "#a8552e",
+    moss:  "#6b7a4f",
+    slate: "#2f4858",
+    plum:  "#6d3a5e",
+    gold:  "#a8792e"
+  };
+  const AVATARS = ["📚","🧠","✏️","🦉","🌱","☕","⭐","🐢","🔭","🎯","📝","🧩"];
+
+  function applyTheme(){
+    const s = DATA.settings;
+    const t = THEMES[s.theme] || THEMES.paper;
+    const root = document.documentElement.style;
+    root.setProperty("--paper", t.paper);
+    root.setProperty("--ink", t.ink);
+    root.setProperty("--ink-soft", t.inkSoft);
+    root.setProperty("--rule", t.rule);
+    root.setProperty("--card", t.card);
+    root.setProperty("--rust", ACCENTS[s.accent] || ACCENTS.rust);
+    root.setProperty("--font-body", s.font === "sans"
+      ? "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+      : "'Iowan Old Style','Palatino Linotype',Georgia,serif");
+    document.body.dataset.density = s.density || "comfortable";
+  }
+
+  function timeGreeting(){
+    const h = new Date().getHours();
+    if(h < 12) return "Good morning";
+    if(h < 18) return "Good afternoon";
+    return "Good evening";
+  }
+
+  function updateSidebarGreeting(){
+    const name = (DATA.profile.name || "").trim();
+    document.getElementById("sidebarAvatar").textContent = DATA.profile.avatar || "📚";
+    document.getElementById("sidebarGreeting").innerHTML =
+      "<b>"+timeGreeting()+(name ? ", "+escapeHtml(name) : "")+"</b>ready to study?";
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement("div");
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function showGreetingToast(){
+    const holder = document.getElementById("greetingToastHolder");
+    const name = (DATA.profile.name || "").trim();
+    const due = currentDeckCards().filter(isDue).length;
+    let sub = due > 0 ? (due + (due===1?" card is":" cards are")+" due for review.") : "No cards due right now — nice work.";
+    holder.innerHTML =
+      '<div class="greeting-toast">'+
+        '<div class="avatar">'+(DATA.profile.avatar||"📚")+'</div>'+
+        '<div class="msg"><b>'+timeGreeting()+(name?", "+escapeHtml(name):"")+'!</b><span>'+sub+'</span></div>'+
+        '<button class="close-toast" id="closeToastBtn">✕</button>'+
+      '</div>';
+    document.getElementById("closeToastBtn").addEventListener("click", ()=>{
+      holder.innerHTML = "";
+    });
+  }
+
+  /* ============================================================
+     PROFILE SETUP MODAL
+  ============================================================ */
+  const profileModal = document.getElementById("profileModal");
+  const modalAvatarRow = document.getElementById("modalAvatarRow");
+  const modalNameInput = document.getElementById("modalName");
+  let modalSelectedAvatar = DATA.profile.avatar || "📚";
+
+  function buildAvatarRow(container, selected, onPick){
+    container.innerHTML = "";
+    AVATARS.forEach(a=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "avatar-choice" + (a === selected ? " selected" : "");
+      btn.textContent = a;
+      btn.addEventListener("click", ()=>{
+        container.querySelectorAll(".avatar-choice").forEach(b=>b.classList.remove("selected"));
+        btn.classList.add("selected");
+        onPick(a);
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  function maybeShowProfileModal(){
+    if(!DATA.profile.name || !DATA.profile.name.trim()){
+      profileModal.style.display = "flex";
+      buildAvatarRow(modalAvatarRow, modalSelectedAvatar, (a)=>{ modalSelectedAvatar = a; });
+    }
+  }
+
+  document.getElementById("modalSaveBtn").addEventListener("click", ()=>{
+    const name = modalNameInput.value.trim();
+    DATA.profile.name = name || "Friend";
+    DATA.profile.avatar = modalSelectedAvatar;
+    save();
+    profileModal.style.display = "none";
+    updateSidebarGreeting();
+    showGreetingToast();
+  });
+
+  /* ============================================================
+     REWARDS VIEW
+  ============================================================ */
+  function renderRewardsView(){
+    document.getElementById("pointsNum").textContent = DATA.rewards.points;
+    document.getElementById("streakNum").textContent = DATA.rewards.streak;
+    const grid = document.getElementById("badgeGrid");
+    grid.innerHTML = "";
+    BADGES.forEach(b=>{
+      const unlocked = DATA.rewards.badgesUnlocked.includes(b.id);
+      const tile = document.createElement("div");
+      tile.className = "badge-tile" + (unlocked ? " unlocked" : "");
+      tile.innerHTML = '<span class="b-icon">'+b.icon+'</span>'+b.label;
+      grid.appendChild(tile);
+    });
+  }
+
+  /* ============================================================
+     SETTINGS VIEW
+  ============================================================ */
+  const settingsNameInput = document.getElementById("settingsName");
+  const avatarRow = document.getElementById("avatarRow");
+  const themeRow = document.getElementById("themeRow");
+  const accentRow = document.getElementById("accentRow");
+  const fontToggle = document.getElementById("fontToggle");
+  const densityToggle = document.getElementById("densityToggle");
+
+  function renderSettingsView(){
+    settingsNameInput.value = DATA.profile.name || "";
+    buildAvatarRow(avatarRow, DATA.profile.avatar, (a)=>{
+      DATA.profile.avatar = a;
+      save();
+      updateSidebarGreeting();
+    });
+
+    themeRow.innerHTML = "";
+    Object.keys(THEMES).forEach(key=>{
+      const t = THEMES[key];
+      const sw = document.createElement("button");
+      sw.type = "button";
+      sw.className = "swatch" + (DATA.settings.theme === key ? " selected" : "");
+      sw.title = t.label;
+      sw.style.background = t.paper;
+      sw.addEventListener("click", ()=>{
+        DATA.settings.theme = key;
+        save();
+        applyTheme();
+        renderSettingsView();
+      });
+      themeRow.appendChild(sw);
+    });
+
+    accentRow.innerHTML = "";
+    Object.keys(ACCENTS).forEach(key=>{
+      const sw = document.createElement("button");
+      sw.type = "button";
+      sw.className = "swatch accent-swatch" + (DATA.settings.accent === key ? " selected" : "");
+      sw.title = key;
+      sw.style.background = ACCENTS[key];
+      sw.addEventListener("click", ()=>{
+        DATA.settings.accent = key;
+        save();
+        applyTheme();
+        renderSettingsView();
+      });
+      accentRow.appendChild(sw);
+    });
+
+    fontToggle.querySelectorAll("button").forEach(b=>{
+      b.classList.toggle("selected", b.dataset.val === DATA.settings.font);
+    });
+    densityToggle.querySelectorAll("button").forEach(b=>{
+      b.classList.toggle("selected", b.dataset.val === DATA.settings.density);
+    });
+  }
+
+  settingsNameInput.addEventListener("input", ()=>{
+    DATA.profile.name = settingsNameInput.value.trim();
+    save();
+    updateSidebarGreeting();
+  });
+
+  fontToggle.addEventListener("click", (e)=>{
+    const btn = e.target.closest("button");
+    if(!btn) return;
+    DATA.settings.font = btn.dataset.val;
+    save();
+    applyTheme();
+    renderSettingsView();
+  });
+
+  densityToggle.addEventListener("click", (e)=>{
+    const btn = e.target.closest("button");
+    if(!btn) return;
+    DATA.settings.density = btn.dataset.val;
+    save();
+    applyTheme();
+    renderSettingsView();
+  });
+
+  /* ---- Data export / import / reset ---- */
+  document.getElementById("exportDataBtn").addEventListener("click", ()=>{
+    const blob = new Blob([JSON.stringify(DATA, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "studybench-backup.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  const importDataInput = document.getElementById("importDataInput");
+  document.getElementById("importDataBtn").addEventListener("click", ()=>importDataInput.click());
+  importDataInput.addEventListener("change", (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const parsed = JSON.parse(reader.result);
+        if(!confirm("Import this backup? It will replace your current data in this browser.")) return;
+        const d = defaultData();
+        Object.keys(d).forEach(k=>{ if(parsed[k] === undefined) parsed[k] = d[k]; });
+        DATA = parsed;
+        save();
+        applyTheme();
+        updateSidebarGreeting();
+        renderCardsView();
+        renderNotesView();
+        renderSettingsView();
+        alert("Backup imported.");
+      }catch(err){
+        alert("That file doesn't look like a valid Studybench backup.");
+      }
+    };
+    reader.readAsText(file);
+    importDataInput.value = "";
+  });
+
+  document.getElementById("resetDataBtn").addEventListener("click", ()=>{
+    if(!confirm("Reset all Studybench data on this device? This deletes every deck, note, and setting. This cannot be undone.")) return;
+    localStorage.removeItem(STORE_KEY);
+    location.reload();
+  });
+
+  /* ============================================================
+     INIT
+  ============================================================ */
+  applyTheme();
+  renderCardsView();
+  renderNotesView();
+  renderWellbeingView();
+  renderRewardsView();
+  updateSidebarGreeting();
+  maybeShowProfileModal();
+  if(DATA.profile.name && DATA.profile.name.trim()) showGreetingToast();
+
+})();
+</script>
+</body>
+</html>
