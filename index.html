@@ -335,6 +335,7 @@
     font-style:italic;
   }
 
+  .filter-btn.active{background:var(--ink);color:var(--paper);}
   .card-list{margin-top:30px;}
   .card-row{
     display:flex;
@@ -352,6 +353,8 @@
     color:var(--slate-soft);
     white-space:nowrap;
     padding-top:2px;
+    line-height:1.6;
+    text-align:right;
   }
 
   .add-card-form{
@@ -440,6 +443,41 @@
     border-top:1px solid var(--rule);
     margin-top:40px;
   }
+
+  /* ---- MUSIC LIBRARY ---- */
+  .music-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .music-tile{
+    background:var(--card);
+    border:1.5px solid var(--rule);
+    padding:20px 10px;
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    cursor:pointer;
+  }
+  .music-tile:hover{border-color:var(--ink);}
+  .music-tile .mu-icon{font-size:30px;display:block;margin-bottom:10px;}
+  .music-tile.playing{border-color:var(--rust);color:var(--ink);background:var(--paper);font-weight:700;}
+  .music-tile.playing .mu-icon{animation:muPulse 1.6s ease-in-out infinite;}
+  @keyframes muPulse{0%,100%{opacity:1;}50%{opacity:0.45;}}
+  .now-playing-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .now-playing-row .np-label{font-weight:700;flex:1;min-width:140px;}
+  .now-playing-row input[type=range]{width:140px;}
+  .track-row{
+    display:flex;align-items:center;gap:12px;
+    padding:10px 0;
+    border-bottom:1px solid var(--rule);
+  }
+  .track-row .t-name{flex:1;font-size:13.5px;}
+  .track-row.playing .t-name{color:var(--rust);font-weight:700;}
 
   /* ---- SETTINGS ---- */
   .settings-block{
@@ -756,10 +794,12 @@
   </div>
 
   <nav class="side-nav">
-    <button class="tab-btn active" data-view="cards">📇 Flashcards</button>
+    <button class="tab-btn active" data-view="dashboard">📊 Dashboard</button>
+    <button class="tab-btn" data-view="cards">📇 Flashcards</button>
     <button class="tab-btn" data-view="timer">⏱ Focus Timer</button>
     <button class="tab-btn" data-view="notes">📝 Notes</button>
     <button class="tab-btn" data-view="wellbeing">🌿 Wellbeing</button>
+    <button class="tab-btn" data-view="music">🎵 Your Music Library</button>
     <button class="tab-btn" data-view="rewards">🏆 Rewards</button>
     <button class="tab-btn" data-view="settings">⚙️ Settings</button>
   </nav>
@@ -769,8 +809,29 @@
 
 <main>
 
+  <!-- ===================== DASHBOARD ===================== -->
+  <section id="view-dashboard" class="view active">
+
+    <div id="dashGreetingToastHolder"></div>
+
+    <h2 class="section-title">Your overview</h2>
+    <div class="stat-row" id="dashStatRow"></div>
+
+    <div class="points-hero" id="dashPointsHero" style="margin-top:6px;"></div>
+
+    <h2 class="section-title" style="margin-top:36px;">Stats breakdown</h2>
+    <div id="dashBreakdown"></div>
+
+    <h2 class="section-title" style="margin-top:36px;">Decks at a glance</h2>
+    <div class="card-list" id="dashDeckList"></div>
+
+    <h2 class="section-title" style="margin-top:40px;">Recent activity</h2>
+    <div id="dashActivityList"></div>
+
+  </section>
+
   <!-- ===================== FLASHCARDS ===================== -->
-  <section id="view-cards" class="view active">
+  <section id="view-cards" class="view">
 
     <div id="greetingToastHolder"></div>
 
@@ -806,6 +867,12 @@
     </div>
 
     <h2 class="section-title" style="margin-top:50px;">All cards in this deck</h2>
+    <div class="deck-bar" id="cardFilterBar" style="margin-bottom:6px;">
+      <button class="ghost small filter-btn active" data-filter="all">All</button>
+      <button class="ghost small filter-btn" data-filter="due">Due now</button>
+      <button class="ghost small filter-btn" data-filter="learned">Learned</button>
+      <button class="ghost small filter-btn" data-filter="new">New / never reviewed</button>
+    </div>
     <div class="card-list" id="cardList"></div>
 
   </section>
@@ -917,6 +984,31 @@
     <div class="checkin-history" id="checkinHistory"></div>
 
     <div class="care-note">If you're finding things heavy or overwhelming, this app can't take the place of real support — a counselor, doctor, or someone you trust can help far more than a mood log can. You deserve that support if you need it.</div>
+  </section>
+
+  <!-- ===================== MUSIC LIBRARY ===================== -->
+  <section id="view-music" class="view">
+    <h2 class="section-title">Ambient sounds</h2>
+    <p class="wellbeing-intro" style="margin-bottom:16px;">Four built-in ambient soundscapes, generated right in your browser — no downloads, no accounts. Tap one to play, tap again to stop.</p>
+    <div class="music-grid" id="ambientGrid"></div>
+
+    <div class="settings-block" id="nowPlayingBlock" style="margin-top:6px;">
+      <h3>Now playing</h3>
+      <div class="now-playing-row">
+        <div class="np-label" id="npLabel">Nothing playing</div>
+        <button class="ghost small" id="npStopBtn">Stop</button>
+        <label style="margin:0;">Vol</label>
+        <input type="range" id="musicVolumeSlider" min="0" max="100" value="50">
+      </div>
+    </div>
+
+    <h2 class="section-title" style="margin-top:40px;">Upload your own music</h2>
+    <div class="settings-block">
+      <p class="sub">Add audio files from this device to play while you study. Uploaded tracks stay loaded only for this browser tab/session — since audio files aren't written to local storage, you'll need to re-add them next time you open Studybench.</p>
+      <input type="file" id="musicUploadInput" accept="audio/*" multiple style="display:none;">
+      <button class="ghost small" id="musicUploadBtn">+ Upload audio file(s)</button>
+      <div id="uploadedTrackList" style="margin-top:14px;"></div>
+    </div>
   </section>
 
   <!-- ===================== REWARDS ===================== -->
@@ -1088,11 +1180,25 @@
     {id:"first_session", icon:"⏱", label:"First Focus",   test:()=> DATA.rewards.points >= 15 && (DATA.sessionsToday.length>0 || DATA._everFocused)},
     {id:"streak_3",      icon:"🔥", label:"3-Day Streak",  test:()=> DATA.rewards.streak >= 3},
     {id:"streak_7",      icon:"🔥", label:"7-Day Streak",  test:()=> DATA.rewards.streak >= 7},
+    {id:"streak_14",     icon:"🔥", label:"14-Day Streak", test:()=> DATA.rewards.streak >= 14},
+    {id:"streak_30",     icon:"🌟", label:"30-Day Streak", test:()=> DATA.rewards.streak >= 30},
     {id:"points_100",    icon:"⭐", label:"100 Points",    test:()=> DATA.rewards.points >= 100},
     {id:"points_500",    icon:"🏅", label:"500 Points",    test:()=> DATA.rewards.points >= 500},
     {id:"points_1500",   icon:"👑", label:"1500 Points",   test:()=> DATA.rewards.points >= 1500},
+    {id:"points_3000",   icon:"💎", label:"3000 Points",   test:()=> DATA.rewards.points >= 3000},
     {id:"checkin_5",     icon:"🌿", label:"5 Check-ins",   test:()=> DATA.wellbeing.checkins.length >= 5},
-    {id:"card_master",   icon:"🧠", label:"50 Reviews",    test:()=> Object.values(DATA.decks).reduce((s,d)=>s+d.reduce((s2,c)=>s2+(c.reps||0),0),0) >= 50}
+    {id:"checkin_10",    icon:"🧘", label:"10 Check-ins",  test:()=> DATA.wellbeing.checkins.length >= 10},
+    {id:"checkin_25",    icon:"🕊️", label:"25 Check-ins",  test:()=> DATA.wellbeing.checkins.length >= 25},
+    {id:"card_master",   icon:"🧠", label:"50 Reviews",    test:()=> Object.values(DATA.decks).reduce((s,d)=>s+d.reduce((s2,c)=>s2+(c.reps||0),0),0) >= 50},
+    {id:"card_master_2", icon:"🎓", label:"200 Reviews",   test:()=> Object.values(DATA.decks).reduce((s,d)=>s+d.reduce((s2,c)=>s2+(c.reps||0),0),0) >= 200},
+    {id:"cards_100",     icon:"📇", label:"100 Cards",     test:()=> Object.values(DATA.decks).reduce((s,d)=>s+d.length,0) >= 100},
+    {id:"deck_builder",  icon:"🗂️", label:"3 Decks",       test:()=> Object.keys(DATA.decks).length >= 3},
+    {id:"deck_builder_2",icon:"🏗️", label:"6 Decks",       test:()=> Object.keys(DATA.decks).length >= 6},
+    {id:"note_taker",    icon:"🖋️", label:"10 Notes",      test:()=> DATA.notes.length >= 10},
+    {id:"note_taker_2",  icon:"📚", label:"25 Notes",      test:()=> DATA.notes.length >= 25},
+    {id:"focus_10",      icon:"🎯", label:"10 Focus Sessions", test:()=> (DATA._totalFocusSessions||0) >= 10},
+    {id:"focus_50",      icon:"🚀", label:"50 Focus Sessions", test:()=> (DATA._totalFocusSessions||0) >= 50},
+    {id:"music_lover",   icon:"🎵", label:"Music Lover",   test:()=> !!DATA._musicUsed}
   ];
 
   function showRewardToast(text, icon){
@@ -1136,6 +1242,7 @@
       setTimeout(()=> showRewardToast("Badge unlocked: "+b.label, b.icon), 900*(i+1));
     });
     if(document.getElementById("view-rewards").classList.contains("active")) renderRewardsView();
+    if(document.getElementById("view-dashboard").classList.contains("active")) renderDashboardView();
   }
 
   /* ============================================================
@@ -1158,6 +1265,7 @@
 
   tabBtns.forEach(btn=>{
     btn.addEventListener("click", ()=>{
+      if(btn.dataset.view !== "cards" && typeof stopAutoplay === "function") stopAutoplay();
       tabBtns.forEach(b=>b.classList.remove("active"));
       views.forEach(v=>v.classList.remove("active"));
       btn.classList.add("active");
@@ -1166,6 +1274,8 @@
       if(btn.dataset.view === "settings") renderSettingsView();
       if(btn.dataset.view === "wellbeing") renderWellbeingView();
       if(btn.dataset.view === "rewards") renderRewardsView();
+      if(btn.dataset.view === "dashboard") renderDashboardView();
+      if(btn.dataset.view === "music") renderMusicView();
     });
   });
 
@@ -1196,6 +1306,7 @@
   }
 
   deckSelect.addEventListener("change", ()=>{
+    stopAutoplay();
     DATA.currentDeck = deckSelect.value;
     save();
     renderCardsView();
@@ -1208,6 +1319,7 @@
     if(!trimmed) return;
     if(!DATA.decks[trimmed]) DATA.decks[trimmed] = [];
     DATA.currentDeck = trimmed;
+    stopAutoplay();
     save();
     renderCardsView();
   });
@@ -1218,6 +1330,7 @@
     if(!confirm('Delete deck "'+DATA.currentDeck+'" and all its cards? This cannot be undone.')) return;
     delete DATA.decks[DATA.currentDeck];
     DATA.currentDeck = Object.keys(DATA.decks)[0];
+    stopAutoplay();
     save();
     renderCardsView();
   });
@@ -1229,6 +1342,7 @@
   function scheduleCard(card, grade){
     // grade: 0 again, 1 hard, 2 easy
     const now = Date.now();
+    card.lastReviewed = now;
     const DAY = 24*60*60*1000;
     if(grade === 0){
       card.interval = 0;
@@ -1249,6 +1363,54 @@
   let activeCard = null;
   let flipped = false;
 
+  // ---- Autoplay: passively cycles through every card in the current deck ----
+  let autoplayOn = false;
+  let autoplayQueue = [];
+  let autoplayIdx = 0;
+  let autoplayTimer = null;
+  const AUTOPLAY_FACE_MS = 2800;
+
+  function stopAutoplay(){
+    autoplayOn = false;
+    clearTimeout(autoplayTimer);
+    autoplayTimer = null;
+  }
+
+  function startAutoplay(){
+    const cards = currentDeckCards();
+    if(cards.length === 0) return;
+    autoplayQueue = cards.slice();
+    autoplayIdx = 0;
+    autoplayOn = true;
+    flipped = false;
+    activeCard = autoplayQueue[0];
+    renderReview();
+    scheduleAutoplayFlip();
+  }
+
+  function scheduleAutoplayFlip(){
+    clearTimeout(autoplayTimer);
+    autoplayTimer = setTimeout(()=>{
+      if(!autoplayOn) return;
+      flipped = true;
+      const el = document.getElementById("flashcardEl");
+      if(el) el.classList.add("flipped");
+      scheduleAutoplayAdvance();
+    }, AUTOPLAY_FACE_MS);
+  }
+
+  function scheduleAutoplayAdvance(){
+    clearTimeout(autoplayTimer);
+    autoplayTimer = setTimeout(()=>{
+      if(!autoplayOn) return;
+      autoplayIdx = (autoplayIdx + 1) % autoplayQueue.length;
+      flipped = false;
+      activeCard = autoplayQueue[autoplayIdx];
+      renderReview();
+      scheduleAutoplayFlip();
+    }, AUTOPLAY_FACE_MS);
+  }
+
   function renderReview(){
     const cards = currentDeckCards();
     const due = cards.filter(isDue);
@@ -1256,21 +1418,32 @@
     statTotal.textContent = cards.length;
     statLearned.textContent = cards.filter(c=>(c.interval||0) >= 7).length;
 
-    if(due.length === 0){
+    if(autoplayOn && (cards.length === 0 || !autoplayQueue.includes(activeCard))){
+      stopAutoplay();
+    }
+
+    if(!autoplayOn && due.length === 0){
       reviewArea.innerHTML = '<div class="empty-state">'+
         (cards.length === 0 ? "No cards yet — add your first one below." : "Nothing due right now. Nice work — come back later.")+
-        '</div>';
+        '</div>'+
+        (cards.length > 0 ? '<div style="text-align:center;"><button class="ghost small" id="autoplayBtn">▶ Autoplay this deck</button></div>' : '');
       activeCard = null;
+      const btn = document.getElementById("autoplayBtn");
+      if(btn) btn.addEventListener("click", startAutoplay);
       return;
     }
 
-    if(!activeCard || !due.includes(activeCard)){
+    if(!autoplayOn && (!activeCard || !due.includes(activeCard))){
       activeCard = due[0];
       flipped = false;
     }
 
+    const autoplayLabel = autoplayOn ? ("Autoplaying card "+(autoplayIdx+1)+" of "+autoplayQueue.length+" — no grading, just review.") : "Click the card to flip it, then grade how well you knew it.";
     reviewArea.innerHTML =
-      '<div class="hint">Click the card to flip it, then grade how well you knew it.</div>'+
+      '<div class="hint" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">'+
+        '<span></span>'+
+        '<button class="ghost small" id="autoplayBtn">'+(autoplayOn ? "⏸ Stop autoplay" : "▶ Autoplay deck")+'</button>'+
+      '</div>'+
       '<div class="card-stage">'+
         '<div class="flashcard" id="flashcardEl">'+
           '<div class="face front"><div class="eyebrow">Question</div><p></p></div>'+
@@ -1283,10 +1456,27 @@
         '<button data-g="2">Easy</button>'+
       '</div>';
 
+    reviewArea.querySelector(".hint span").textContent = autoplayLabel;
+
     const el = document.getElementById("flashcardEl");
     el.querySelector(".face.front p").textContent = activeCard.front;
     el.querySelector(".face.back p").textContent = activeCard.back;
     if(flipped) el.classList.add("flipped");
+
+    document.getElementById("autoplayBtn").addEventListener("click", ()=>{
+      if(autoplayOn){
+        stopAutoplay();
+        activeCard = null;
+        renderReview();
+      } else {
+        startAutoplay();
+      }
+    });
+
+    if(autoplayOn){
+      document.getElementById("gradeRow").style.display = "none";
+      return; // no manual flip/grade while autoplaying
+    }
 
     el.addEventListener("click", ()=>{
       flipped = !flipped;
@@ -1321,14 +1511,47 @@
     return "in " + Math.round(hrs/24) + "d";
   }
 
+  function fmtLastReviewed(c){
+    if(!c.lastReviewed) return "never reviewed";
+    const diff = Date.now() - c.lastReviewed;
+    const mins = Math.round(diff/60000);
+    if(mins < 1) return "reviewed just now";
+    if(mins < 60) return "reviewed " + mins + "m ago";
+    const hrs = Math.round(mins/60);
+    if(hrs < 24) return "reviewed " + hrs + "h ago";
+    return "reviewed " + Math.round(hrs/24) + "d ago";
+  }
+
+  let cardListFilter = "all";
+  document.getElementById("cardFilterBar").addEventListener("click", (e)=>{
+    const btn = e.target.closest(".filter-btn");
+    if(!btn) return;
+    cardListFilter = btn.dataset.filter;
+    document.querySelectorAll("#cardFilterBar .filter-btn").forEach(b=>b.classList.toggle("active", b===btn));
+    renderCardListing();
+  });
+
+  function filteredCardsForListing(cards){
+    if(cardListFilter === "due") return cards.filter(isDue);
+    if(cardListFilter === "learned") return cards.filter(c=>(c.interval||0) >= 7);
+    if(cardListFilter === "new") return cards.filter(c=>!c.lastReviewed);
+    return cards; // "all" — this is how you can reach every old flashcard you've ever added
+  }
+
   function renderCardListing(){
-    const cards = currentDeckCards();
-    if(cards.length === 0){
+    const allCards = currentDeckCards();
+    const cards = filteredCardsForListing(allCards);
+    if(allCards.length === 0){
       cardList.innerHTML = '<div class="empty-state">This deck is empty.</div>';
       return;
     }
+    if(cards.length === 0){
+      cardList.innerHTML = '<div class="empty-state">No cards match this filter.</div>';
+      return;
+    }
     cardList.innerHTML = "";
-    cards.forEach((c, idx)=>{
+    cards.forEach((c)=>{
+      const idx = allCards.indexOf(c);
       const row = document.createElement("div");
       row.className = "card-row";
       row.innerHTML =
@@ -1338,10 +1561,10 @@
         '<button class="ghost small danger" style="padding:4px 10px;">×</button>';
       row.querySelector(".front-text").textContent = c.front;
       row.querySelector(".back-text").textContent = c.back;
-      row.querySelector(".due").textContent = fmtDue(c);
+      row.querySelector(".due").innerHTML = escapeHtml(fmtDue(c)) + "<br>" + escapeHtml(fmtLastReviewed(c));
       row.querySelector("button").addEventListener("click", ()=>{
         if(!confirm("Delete this card?")) return;
-        cards.splice(idx,1);
+        allCards.splice(idx,1);
         save();
         renderCardsView();
       });
@@ -1479,6 +1702,7 @@
     });
     if(type === "focus"){
       DATA._everFocused = true;
+      DATA._totalFocusSessions = (DATA._totalFocusSessions||0) + 1;
       awardPoints(15, "focus session complete");
     }
     save();
@@ -1866,6 +2090,232 @@
   }
 
   /* ============================================================
+     MUSIC LIBRARY — 4 built-in ambient soundscapes generated live
+     in the browser (no external audio files), plus optional
+     user-uploaded tracks for this session.
+  ============================================================ */
+  const AMBIENT_PRESETS = [
+    {id:"rain",   icon:"🌧️", label:"Rainfall"},
+    {id:"waves",  icon:"🌊", label:"Ocean Waves"},
+    {id:"forest", icon:"🌲", label:"Forest Morning"},
+    {id:"drone",  icon:"🎧", label:"Deep Focus Drone"}
+  ];
+
+  let musicCtx = null;
+  function getMusicCtx(){
+    if(!musicCtx) musicCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(musicCtx.state === "suspended") musicCtx.resume();
+    return musicCtx;
+  }
+
+  let musicVolume = 0.5;
+  let masterGainNode = null;
+  function getMasterGain(){
+    const ctx = getMusicCtx();
+    if(!masterGainNode){
+      masterGainNode = ctx.createGain();
+      masterGainNode.gain.value = musicVolume;
+      masterGainNode.connect(ctx.destination);
+    }
+    return masterGainNode;
+  }
+
+  let activeAmbient = null;   // {id, stop()}
+  let activeAudioEl = null;   // HTMLAudioElement for an uploaded track
+  let activeTrackType = null; // "ambient" | "upload" | null
+  let activeTrackLabel = null;
+  let activeUploadId = null;
+  let uploadedTracks = [];    // {id, name, url} — in-memory only, this session
+
+  function makeNoiseBuffer(ctx){
+    const bufferSize = ctx.sampleRate * 2;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++) data[i] = Math.random()*2 - 1;
+    return buffer;
+  }
+
+  function noteMusicUsed(){
+    if(!DATA._musicUsed){
+      DATA._musicUsed = true;
+      const newBadges = checkBadges();
+      save();
+      newBadges.forEach((b,i)=>{
+        setTimeout(()=> showRewardToast("Badge unlocked: "+b.label, b.icon), 400*(i+1));
+      });
+    }
+  }
+
+  function stopAllMusic(){
+    if(activeAmbient){
+      try{ activeAmbient.stop(); }catch(e){}
+      activeAmbient = null;
+    }
+    if(activeAudioEl){
+      try{ activeAudioEl.pause(); }catch(e){}
+      activeAudioEl = null;
+    }
+    activeTrackType = null;
+    activeTrackLabel = null;
+    activeUploadId = null;
+  }
+
+  function playAmbientPreset(id){
+    const wasPlayingThis = activeTrackType === "ambient" && activeAmbient && activeAmbient.id === id;
+    stopAllMusic();
+    if(wasPlayingThis){ renderMusicView(); return; } // tapping the same tile again just stops it
+
+    const ctx = getMusicCtx();
+    const master = getMasterGain();
+    const nodesToStop = [];
+
+    if(id === "drone"){
+      const freqs = [110, 165, 220];
+      freqs.forEach((f,i)=>{
+        const osc = ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.value = f;
+        const g = ctx.createGain();
+        g.gain.value = 0.05;
+        osc.connect(g); g.connect(master);
+        osc.start();
+        nodesToStop.push(osc);
+        const lfo = ctx.createOscillator();
+        lfo.frequency.value = 0.05 + i*0.02;
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.value = 0.02;
+        lfo.connect(lfoGain);
+        lfoGain.connect(g.gain);
+        lfo.start();
+        nodesToStop.push(lfo);
+      });
+    } else {
+      const noiseSrc = ctx.createBufferSource();
+      noiseSrc.buffer = makeNoiseBuffer(ctx);
+      noiseSrc.loop = true;
+      const filter = ctx.createBiquadFilter();
+      const g = ctx.createGain();
+      if(id === "rain"){
+        filter.type = "bandpass";
+        filter.frequency.value = 2200;
+        filter.Q.value = 0.6;
+        g.gain.value = 0.14;
+      } else if(id === "waves"){
+        filter.type = "lowpass";
+        filter.frequency.value = 500;
+        g.gain.value = 0.16;
+        const lfo = ctx.createOscillator();
+        lfo.frequency.value = 0.15;
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.value = 250;
+        lfo.connect(lfoGain);
+        lfoGain.connect(filter.frequency);
+        lfo.start();
+        nodesToStop.push(lfo);
+      } else { // forest
+        filter.type = "highpass";
+        filter.frequency.value = 900;
+        g.gain.value = 0.06;
+      }
+      noiseSrc.connect(filter);
+      filter.connect(g);
+      g.connect(master);
+      noiseSrc.start();
+      nodesToStop.push(noiseSrc);
+    }
+
+    activeAmbient = {
+      id,
+      stop(){ nodesToStop.forEach(n=>{ try{n.stop();}catch(e){} try{n.disconnect();}catch(e){} }); }
+    };
+    activeTrackType = "ambient";
+    activeTrackLabel = AMBIENT_PRESETS.find(p=>p.id===id).label;
+    noteMusicUsed();
+    renderMusicView();
+  }
+
+  function playUploadedTrack(track){
+    const wasPlayingThis = activeTrackType === "upload" && activeUploadId === track.id;
+    stopAllMusic();
+    if(wasPlayingThis){ renderMusicView(); return; }
+    const el = new Audio(track.url);
+    el.loop = true;
+    el.volume = musicVolume;
+    el.play().catch(()=>{ /* browser may block autoplay until a user gesture; this click is one, so this should succeed */ });
+    activeAudioEl = el;
+    activeTrackType = "upload";
+    activeTrackLabel = track.name;
+    activeUploadId = track.id;
+    noteMusicUsed();
+    renderMusicView();
+  }
+
+  function removeUploadedTrack(id){
+    if(activeUploadId === id) stopAllMusic();
+    uploadedTracks = uploadedTracks.filter(t=>t.id !== id);
+    renderMusicView();
+  }
+
+  document.getElementById("musicUploadBtn").addEventListener("click", ()=>{
+    document.getElementById("musicUploadInput").click();
+  });
+  document.getElementById("musicUploadInput").addEventListener("change", (e)=>{
+    Array.from(e.target.files || []).forEach(file=>{
+      const url = URL.createObjectURL(file);
+      uploadedTracks.push({id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), name: file.name, url});
+    });
+    e.target.value = "";
+    renderMusicView();
+  });
+
+  document.getElementById("npStopBtn").addEventListener("click", ()=>{
+    stopAllMusic();
+    renderMusicView();
+  });
+
+  document.getElementById("musicVolumeSlider").addEventListener("input", (e)=>{
+    musicVolume = parseInt(e.target.value,10) / 100;
+    if(masterGainNode) masterGainNode.gain.value = musicVolume;
+    if(activeAudioEl) activeAudioEl.volume = musicVolume;
+  });
+
+  function renderMusicView(){
+    const grid = document.getElementById("ambientGrid");
+    grid.innerHTML = "";
+    AMBIENT_PRESETS.forEach(p=>{
+      const playing = activeTrackType === "ambient" && activeAmbient && activeAmbient.id === p.id;
+      const tile = document.createElement("div");
+      tile.className = "music-tile" + (playing ? " playing" : "");
+      tile.innerHTML = '<span class="mu-icon">'+p.icon+'</span>'+p.label+(playing ? '<br><span style="font-size:9.5px;">▶ playing</span>' : "");
+      tile.addEventListener("click", ()=> playAmbientPreset(p.id));
+      grid.appendChild(tile);
+    });
+
+    document.getElementById("npLabel").textContent = activeTrackLabel ? ("▶ "+activeTrackLabel) : "Nothing playing";
+    document.getElementById("musicVolumeSlider").value = Math.round(musicVolume*100);
+
+    const list = document.getElementById("uploadedTrackList");
+    if(uploadedTracks.length === 0){
+      list.innerHTML = '<div class="empty-state" style="padding:18px 4px;">No uploaded tracks yet — add some above.</div>';
+      return;
+    }
+    list.innerHTML = "";
+    uploadedTracks.forEach(t=>{
+      const playing = activeTrackType === "upload" && activeUploadId === t.id;
+      const row = document.createElement("div");
+      row.className = "track-row" + (playing ? " playing" : "");
+      row.innerHTML =
+        '<button class="ghost small" style="padding:4px 10px;">'+(playing ? "⏸" : "▶")+'</button>'+
+        '<div class="t-name"></div>'+
+        '<button class="ghost small danger" style="padding:4px 10px;">×</button>';
+      row.querySelector(".t-name").textContent = t.name;
+      row.querySelectorAll("button")[0].addEventListener("click", ()=> playUploadedTrack(t));
+      row.querySelectorAll("button")[1].addEventListener("click", ()=> removeUploadedTrack(t.id));
+      list.appendChild(row);
+    });
+  }
+
+  /* ============================================================
      THEME / CUSTOMIZATION
   ============================================================ */
   const THEMES = {
@@ -1921,18 +2371,21 @@
   }
 
   function showGreetingToast(){
-    const holder = document.getElementById("greetingToastHolder");
+    const holders = ["dashGreetingToastHolder","greetingToastHolder"].map(id=>document.getElementById(id)).filter(Boolean);
+    if(holders.length === 0) return;
     const name = (DATA.profile.name || "").trim();
-    const due = currentDeckCards().filter(isDue).length;
-    let sub = due > 0 ? (due + (due===1?" card is":" cards are")+" due for review.") : "No cards due right now — nice work.";
-    holder.innerHTML =
+    let totalDue = 0;
+    Object.values(DATA.decks).forEach(d=> totalDue += d.filter(isDue).length);
+    let sub = totalDue > 0 ? (totalDue + (totalDue===1?" card is":" cards are")+" due for review.") : "No cards due right now — nice work.";
+    const html =
       '<div class="greeting-toast">'+
         '<div class="avatar">'+(DATA.profile.avatar||"📚")+'</div>'+
         '<div class="msg"><b>'+timeGreeting()+(name?", "+escapeHtml(name):"")+'!</b><span>'+sub+'</span></div>'+
-        '<button class="close-toast" id="closeToastBtn">✕</button>'+
+        '<button class="close-toast">✕</button>'+
       '</div>';
-    document.getElementById("closeToastBtn").addEventListener("click", ()=>{
-      holder.innerHTML = "";
+    holders.forEach(holder=>{
+      holder.innerHTML = html;
+      holder.querySelector(".close-toast").addEventListener("click", ()=>{ holder.innerHTML = ""; });
     });
   }
 
@@ -1992,6 +2445,125 @@
       tile.innerHTML = '<span class="b-icon">'+b.icon+'</span>'+b.label;
       grid.appendChild(tile);
     });
+  }
+
+  /* ============================================================
+     PERSONAL DASHBOARD — one-glance overview across the whole app
+  ============================================================ */
+  function renderDashboardView(){
+    checkNewDay();
+    const deckNames = Object.keys(DATA.decks);
+    const totalCards = deckNames.reduce((s,n)=> s + DATA.decks[n].length, 0);
+    const totalDue = deckNames.reduce((s,n)=> s + DATA.decks[n].filter(isDue).length, 0);
+    const focusToday = DATA.sessionsToday.filter(s=>s.type==="focus").length;
+
+    const statRow = document.getElementById("dashStatRow");
+    statRow.innerHTML =
+      '<div class="stat"><b>'+totalDue+'</b>Cards due</div>'+
+      '<div class="stat"><b>'+totalCards+'</b>Total cards</div>'+
+      '<div class="stat"><b>'+deckNames.length+'</b>Decks</div>'+
+      '<div class="stat"><b>'+DATA.notes.length+'</b>Notes</div>'+
+      '<div class="stat"><b>'+focusToday+'</b>Focus sessions today</div>';
+
+    const hero = document.getElementById("dashPointsHero");
+    hero.innerHTML =
+      '<div><div class="points-num">'+DATA.rewards.points+'</div><div class="points-label">Total points</div></div>'+
+      '<div class="streak-block"><div class="points-num" style="font-size:32px;">'+DATA.rewards.streak+'</div><div class="points-label">Day streak</div></div>'+
+      '<div class="streak-block"><div class="points-num" style="font-size:32px;">'+DATA.rewards.badgesUnlocked.length+' / '+BADGES.length+'</div><div class="points-label">Badges earned</div></div>';
+
+    const totalReps = deckNames.reduce((s,n)=> s + DATA.decks[n].reduce((s2,c)=>s2+(c.reps||0),0), 0);
+    const learnedCards = deckNames.reduce((s,n)=> s + DATA.decks[n].filter(c=>(c.interval||0)>=7).length, 0);
+    const focusMinutesToday = DATA.sessionsToday.filter(s=>s.type==="focus").reduce((s,x)=>s+x.minutes,0);
+    const recentMood = DATA.wellbeing.checkins.slice().sort((a,b)=>b.date-a.date)[0];
+
+    const breakdown = document.getElementById("dashBreakdown");
+    breakdown.innerHTML =
+      '<div class="field-row">'+
+        '<div class="settings-block" style="margin-bottom:0;">'+
+          '<h3>📇 Flashcards</h3><p class="sub">Across all decks</p>'+
+          '<div class="stat-row" style="margin-bottom:0;">'+
+            '<div class="stat"><b>'+totalCards+'</b>Total</div>'+
+            '<div class="stat"><b>'+learnedCards+'</b>Comfortable</div>'+
+            '<div class="stat"><b>'+totalReps+'</b>Reviews done</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="settings-block" style="margin-bottom:0;">'+
+          '<h3>⏱ Focus Timer</h3><p class="sub">Pomodoro sessions</p>'+
+          '<div class="stat-row" style="margin-bottom:0;">'+
+            '<div class="stat"><b>'+focusToday+'</b>Today</div>'+
+            '<div class="stat"><b>'+focusMinutesToday+'</b>Minutes today</div>'+
+            '<div class="stat"><b>'+(DATA._totalFocusSessions||0)+'</b>All-time</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="field-row">'+
+        '<div class="settings-block" style="margin-bottom:0;">'+
+          '<h3>🌿 Wellbeing</h3><p class="sub">Check-ins logged</p>'+
+          '<div class="stat-row" style="margin-bottom:0;">'+
+            '<div class="stat"><b>'+DATA.wellbeing.checkins.length+'</b>Total</div>'+
+            '<div class="stat"><b>'+(recentMood ? moodMeta(recentMood.mood).icon : "—")+'</b>Last mood</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="settings-block" style="margin-bottom:0;">'+
+          '<h3>📝 Notes</h3><p class="sub">Across all notebooks</p>'+
+          '<div class="stat-row" style="margin-bottom:0;">'+
+            '<div class="stat"><b>'+DATA.notes.length+'</b>Total notes</div>'+
+            '<div class="stat"><b>'+DATA.notebooks.length+'</b>Notebooks</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+
+    const deckList = document.getElementById("dashDeckList");
+    if(deckNames.length === 0){
+      deckList.innerHTML = '<div class="empty-state">No decks yet.</div>';
+    } else {
+      deckList.innerHTML = "";
+      deckNames.forEach(name=>{
+        const cards = DATA.decks[name];
+        const due = cards.filter(isDue).length;
+        const row = document.createElement("div");
+        row.className = "card-row";
+        row.innerHTML =
+          '<div class="front-text"></div>'+
+          '<div class="back-text"></div>'+
+          '<button class="ghost small">Study</button>';
+        row.querySelector(".front-text").textContent = name;
+        row.querySelector(".back-text").textContent = cards.length + " card" + (cards.length===1?"":"s") + (due>0 ? " · "+due+" due now" : " · all caught up");
+        row.querySelector("button").addEventListener("click", ()=>{
+          DATA.currentDeck = name;
+          save();
+          document.querySelector('.tab-btn[data-view="cards"]').click();
+        });
+        deckList.appendChild(row);
+      });
+    }
+
+    const activity = document.getElementById("dashActivityList");
+    const items = [];
+    DATA.sessionsToday.slice().reverse().slice(0,3).forEach(s=>{
+      const label = s.type === "focus" ? "Focus block" : (s.type === "break" ? "Short break" : "Long break");
+      items.push("⏱ "+label+" — "+s.minutes+"m ("+s.time+")");
+    });
+    const recentCheckins = DATA.wellbeing.checkins.slice().sort((a,b)=>b.date-a.date).slice(0,2);
+    recentCheckins.forEach(c=>{
+      items.push("🌿 Check-in: "+moodMeta(c.mood).label+" — "+new Date(c.date).toLocaleDateString([], {month:"short", day:"numeric"}));
+    });
+    const recentNotes = DATA.notes.slice().sort((a,b)=>b.updated-a.updated).slice(0,2);
+    recentNotes.forEach(n=>{
+      items.push("📝 Edited note: "+(n.title||"Untitled note"));
+    });
+    if(items.length === 0){
+      activity.innerHTML = '<div class="empty-state">Nothing logged yet today — start a focus session or review some cards!</div>';
+    } else {
+      activity.innerHTML = "";
+      items.forEach(text=>{
+        const row = document.createElement("div");
+        row.className = "log-row";
+        row.innerHTML = "<span></span>";
+        row.querySelector("span").textContent = text;
+        activity.appendChild(row);
+      });
+    }
   }
 
   /* ============================================================
@@ -2109,6 +2681,9 @@
         renderCardsView();
         renderNotesView();
         renderSettingsView();
+        renderWellbeingView();
+        renderRewardsView();
+        renderDashboardView();
         alert("Backup imported.");
       }catch(err){
         alert("That file doesn't look like a valid Studybench backup.");
@@ -2132,6 +2707,7 @@
   renderNotesView();
   renderWellbeingView();
   renderRewardsView();
+  renderDashboardView();
   updateSidebarGreeting();
   maybeShowProfileModal();
   if(DATA.profile.name && DATA.profile.name.trim()) showGreetingToast();
